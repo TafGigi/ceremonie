@@ -9,127 +9,16 @@
 <meta name="apple-mobile-web-app-title" content="Déroulé cérémonie">
 <link rel="icon" href="gigi.webp">
 <link rel="apple-touch-icon" href="gigi.webp">
+<link rel="stylesheet" href="style.css">
 <title>Déroulé cérémonie</title>
-<style>
-:root{--bg:#faf7f2;--card:#fff;--ink:#2b2622;--mut:#7a6f66;--line:#e6ded3;--acc:#9a5b3c;--ok:#3d7a54;--warn:#c0392b}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-text-size-adjust:100%}
-main{max-width:1300px;margin:0 auto;padding:14px 12px 100px}
-
-/* Header */
-.hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
-h1{font-size:1.25rem;margin:0}
-.sub{color:var(--mut);margin:0 0 12px;font-size:.85rem}
-.pseudo-chip{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:5px 13px;font-size:.82rem;cursor:pointer;min-height:36px;white-space:nowrap}
-.pseudo-chip:active{background:var(--line)}
-
-/* Panels */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
-.panel>h2,.col-hd h2,details summary{font-size:.73rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin:0}
-.panel>h2{margin-bottom:10px}
-
-/* Forms */
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.grid .full{grid-column:1/-1}
-label{display:block;font-size:.75rem;color:var(--mut);margin-bottom:3px}
-input,select,textarea,button{font:inherit;color:inherit}
-input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.93rem}
-textarea{min-height:72px;resize:vertical}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%237a6f66'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
-
-/* Buttons */
-button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;min-height:44px;touch-action:manipulation;line-height:1.3}
-button:active{opacity:.7}
-button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
-button.sm{padding:5px 10px;min-height:36px;font-size:.82rem}
-button:disabled{opacity:.3;pointer-events:none}
-
-/* Bilan */
-.sum{display:flex;flex-wrap:wrap;gap:5px 16px;align-items:baseline;margin-bottom:8px}
-.sum b{font-size:1.05rem}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:600}
-.type-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.tpill{display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:.8rem}
-.tpill b{font-weight:700}
-.note-bilan{margin-top:7px;font-size:.84rem;color:var(--mut)}
-
-/* Colonnes Kanban */
-.columns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;align-items:start}
-@media(max-width:780px){.columns{grid-template-columns:1fr}}
-.col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px;min-height:80px}
-.col.drag-over{border-color:var(--acc);background:#fdf5ef}
-.col-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
-.col-hd h2{display:flex;align-items:center;gap:6px}
-.cnt{font-size:.72rem;color:var(--mut);background:var(--bg);border-radius:99px;padding:1px 7px;border:1px solid var(--line);font-weight:400;text-transform:none;letter-spacing:0}
-
-/* Cartes */
-.card{background:var(--card);border:1px solid var(--line);border-left:4px solid #ccc;border-radius:13px;padding:10px 11px;margin-bottom:8px;display:flex;gap:10px}
-.card[data-col=deroule]{border-left-color:var(--ok)}
-.card[data-col=a_trancher]{border-left-color:#e0a21b}
-.card[data-col=valide]{border-left-color:#5b9bd5}
-.card.drag{opacity:.3}
-.card-body{flex:1;min-width:0}
-.card-body h3{margin:0;font-size:.97rem;line-height:1.35}
-.card-meta{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:5px;font-size:.77rem;color:var(--mut);align-items:center}
-.chip{background:#f1ebe3;border-radius:99px;padding:2px 8px;font-size:.75rem}
-.chip.by{background:#e3edf7;color:#2a5a8c}
-.card-note{margin:6px 0 0;font-size:.83rem;color:var(--mut);white-space:pre-wrap}
-.act{display:flex;flex-direction:column;gap:3px}
-.act button{padding:4px 8px;min-height:34px;font-size:.8rem}
-
-/* Formulaire inline */
-.form{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
-.form .grid{grid-template-columns:1fr 1fr}
-
-/* Paramètres collapsibles */
-details{margin-top:0}
-details summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;padding:2px 0;user-select:none}
-details summary::-webkit-details-marker{display:none}
-details summary::before{content:'▸';font-size:.7rem;transition:transform .2s;color:var(--mut)}
-details[open] summary::before{transform:rotate(90deg)}
-.inner{margin-top:10px}
-.param-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.88rem}
-.param-row span{flex:1}
-.add-row{display:flex;gap:8px;margin-top:8px}
-.add-row input{flex:1}
-.emoji-in{width:52px!important;text-align:center;font-size:1.1rem;padding:7px 4px!important}
-
-/* Misc */
-.row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-ul.l{margin:4px 0 0;padding-left:18px}
-ul.l li{margin:3px 0;font-size:.88rem}
-.empty{color:var(--mut);font-style:italic;font-size:.85rem}
-.sync{font-weight:600}.sync.ok{color:var(--ok)}.sync.err{color:var(--warn)}.sync.wait,.sync.demo{color:var(--mut)}
-@keyframes flash{0%,100%{opacity:1}40%{opacity:.2}}
-.sync.flash{animation:flash .7s ease}
-/* Qui checkboxes */
-.qui-checks{display:flex;flex-wrap:wrap;gap:6px 14px}
-.qui-checks label{display:flex;align-items:center;gap:6px;font-size:.88rem;color:var(--ink);cursor:pointer;min-height:28px}
-.qui-checks input{width:auto;min-height:auto;padding:0;border-radius:3px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:.86rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:200}
-.toast.on{opacity:1}
-
-/* Overlay pseudo */
-.overlay{position:fixed;inset:0;background:rgba(43,38,34,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:150;padding:20px}
-.modal{background:var(--card);border-radius:18px;padding:24px 20px;width:100%;max-width:360px}
-.modal h2{margin:0 0 6px;font-size:1.15rem}
-.modal p{margin:0 0 10px;font-size:.88rem;color:var(--mut)}
-.pseudo-picks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-.chip-btn{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:7px 16px;min-height:40px;cursor:pointer;font-size:.9rem;touch-action:manipulation}
-.chip-btn:active{background:var(--acc);color:#fff;border-color:var(--acc)}
-
-@media print{
-  body{background:#fff}
-  .noprint,.act,.form,.toast,.overlay{display:none!important}
-  .panel,.card{break-inside:avoid;border-color:#bbb}
-  main{max-width:none;padding:0}
-  .columns{grid-template-columns:1fr}
-}
-</style>
 </head>
 <body>
 <main id="app"></main>
 <div id="pseudo-overlay" style="display:none" class="overlay"></div>
+<div id="settings-overlay" style="display:none" class="overlay"></div>
+<div id="add-overlay" style="display:none" class="overlay"></div>
+<button id="chat-btn" class="noprint" data-act="toggleChat"></button>
+<div id="chat-panel"></div>
 <div class="toast" id="toast"></div>
 <script>
 /* ===== Firebase ===== */
@@ -139,6 +28,8 @@ const DB_PATH = 'deroule-7q4m2x';
 
 const ONLINE   = !!DB_URL;
 const endpoint = DB_URL.replace(/\/$/, '') + '/' + DB_PATH + '.json';
+const LOCK_TTL = 120000;
+const PWD      = 'clownard';
 
 const DEFAULT_TYPES = {
   discours:  {label:'Discours',        emoji:'🎤'},
@@ -150,98 +41,123 @@ const DEFAULT_TYPES = {
   autre:     {label:'Autre',           emoji:'•'},
 };
 const DEFAULT_QUI = {q1:'Tanguy',q2:'Bastos',q3:'Tanguy & Bastos',q4:'Témoin',q5:'Parent',q6:'Mariés',q7:'Tous'};
-const COLS = {deroule:'Déroulé', a_trancher:'À trancher', valide:'Validé'};
+const COLS      = {deroule:'Déroulé final', valide:'Idées validées', a_trancher:'Idées à discuter'};
+const COL_ORDER = ['deroule','valide','a_trancher'];
+const EMOJIS      = [{k:'up',e:'👍'},{k:'down',e:'👎'},{k:'lol',e:'😂'},{k:'heart',e:'♥️'},{k:'angry',e:'😡'}];
+const TYPE_COLORS = ['#c94c1c','#1d5433','#1b3d6a','#7a3209','#8b4f9e','#1a7a6e','#c48a00','#5a6b7c'];
 
-const uid = () => Math.random().toString(36).slice(2, 9);
-// qui est stocké comme chaîne CSV ("Tanguy,Bastos") pour éviter les soucis Firebase avec les arrays
-const quiList = q => String(q||'').split(',').map(s=>s.trim()).filter(Boolean);
-const PWD = 'clownard';
-let myPseudo = (localStorage.getItem('ceremonie_auth')==='1') ? (localStorage.getItem('ceremonie_pseudo')||'') : '';
+const uid     = () => Math.random().toString(36).slice(2, 9);
+const quiList = q  => String(q||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+let myPseudo = (localStorage.getItem('ceremonie_auth')==='1')
+  ? (localStorage.getItem('ceremonie_pseudo')||'') : '';
 let R = null, S = null, editing = null;
 let inflight = 0, chain = Promise.resolve(), deferred = false;
 let status = ONLINE ? 'wait' : 'demo';
+let chatOpen = false;
 
 const B = (id,titre,type,duree,qui,colonne,extra={}) =>
   ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',createdBy:'',...extra});
 
 function defaultDoc(){
-  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}};
+  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00'};
 }
 
-/* ---------- Normalisation ---------- */
+/* ── Normalisation ── */
 const nb = b => {
-  const block = Object.assign({titre:'',type:'autre',duree:0,qui:'',colonne:'',musique:'',materiel:'',notes:'',pos:0,createdBy:''}, b);
-  if(!block.colonne) block.colonne = (b.statut === 'ok') ? 'deroule' : 'a_trancher';
-  // normaliser qui : array ou objet Firebase → CSV string
+  const block = Object.assign({titre:'',type:'autre',duree:0,qui:'',colonne:'',
+    musique:'',materiel:'',notes:'',pos:0,createdBy:''}, b);
+  if(!block.colonne) block.colonne = (b.statut==='ok') ? 'deroule' : 'a_trancher';
   if(Array.isArray(block.qui)) block.qui = block.qui.join(',');
-  else if(typeof block.qui === 'object' && block.qui !== null) block.qui = Object.values(block.qui).join(',');
-  if(block.qui === '—') block.qui = '';
+  else if(typeof block.qui==='object'&&block.qui!==null) block.qui = Object.values(block.qui).join(',');
+  if(block.qui==='—') block.qui = '';
   return block;
 };
 
 function view(){
-  const d = R || {};
-  const types = (d.types && !Array.isArray(d.types)) ? d.types : DEFAULT_TYPES;
-  const qui   = (d.qui   && !Array.isArray(d.qui))   ? d.qui   : DEFAULT_QUI;
+  const d = R||{};
+  const types = (d.types&&!Array.isArray(d.types)) ? d.types : DEFAULT_TYPES;
+  const qui   = (d.qui  &&!Array.isArray(d.qui))   ? d.qui   : DEFAULT_QUI;
   return {
-    types,
-    qui,
+    types, qui,
     quiArr: Object.values(qui),
-    blocs: Object.values(d.blocs || {}).map(nb).sort((a,b) => a.pos - b.pos)
+    blocs: Object.values(d.blocs||{}).map(nb).sort((a,b)=>a.pos-b.pos)
   };
 }
 
-/* ---------- Synchronisation ---------- */
-const sj = o => JSON.stringify(o,(k,v) => v && typeof v==='object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((a,k2)=>(a[k2]=v[k2],a),{}) : v);
+/* ── Synchronisation ── */
+const sj = o => JSON.stringify(o,(k,v) =>
+  v&&typeof v==='object'&&!Array.isArray(v)
+    ? Object.keys(v).sort().reduce((a,k2)=>(a[k2]=v[k2],a),{}) : v);
 
 function setPath(obj,path,val){
-  const ks=path.split('/');let o=obj;
-  for(let i=0;i<ks.length-1;i++){if(typeof o[ks[i]]!=='object'||o[ks[i]]===null)o[ks[i]]={};o=o[ks[i]];}
-  if(val===null)delete o[ks[ks.length-1]];else o[ks[ks.length-1]]=val;
+  const ks=path.split('/'); let o=obj;
+  for(let i=0;i<ks.length-1;i++){
+    if(typeof o[ks[i]]!=='object'||o[ks[i]]===null) o[ks[i]]={};
+    o=o[ks[i]];
+  }
+  if(val===null) delete o[ks[ks.length-1]]; else o[ks[ks.length-1]]=val;
 }
+
 function send(method,body){
-  if(!ONLINE)return;inflight++;
-  chain=chain
+  if(!ONLINE) return; inflight++;
+  chain = chain
     .then(()=>fetch(endpoint,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}))
     .then(r=>{if(!r.ok)throw new Error(r.status);})
     .catch(()=>{setStatus('err');toast('Échec de synchronisation');})
     .then(()=>{inflight--;if(inflight===0)refresh();});
 }
+
 function update(patch){
-  for(const[p,v]of Object.entries(patch))setPath(R,p,v);
-  send('PATCH',patch);render();
+  for(const[p,v] of Object.entries(patch)) setPath(R,p,v);
+  send('PATCH',patch);
+  if(editing && Object.keys(patch).every(p=>p.startsWith('blocs/'+editing+'/'))){
+    updateSettingsIfOpen(); return;
+  }
+  render();
+  updateSettingsIfOpen();
 }
-function replaceAll(doc){R=doc;send('PUT',doc);render();}
+
+function sendSilent(patch){
+  for(const[p,v] of Object.entries(patch)) setPath(R,p,v);
+  send('PATCH',patch);
+}
+
+function replaceAll(doc){ R=doc; send('PUT',doc); render(); }
 
 function isEditing(){
   const a=document.activeElement;
-  return !!(a&&a.closest&&a.closest('#app')&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox');
+  return !!(a&&a.closest&&(a.closest('#app')||a.closest('#add-overlay'))
+    &&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox');
 }
+
 async function refresh(){
-  if(!ONLINE||inflight>0)return;
+  if(!ONLINE||inflight>0) return;
   try{
     const r=await fetch(endpoint,{cache:'no-store'});
-    if(!r.ok)throw new Error(r.status);
+    if(!r.ok) throw new Error(r.status);
     const d=await r.json();
-    if(inflight>0)return;
+    if(inflight>0) return;
     setStatus('ok');
     if(d===null){R=defaultDoc();send('PUT',R);render();return;}
-    if(R&&sj(d)===sj(R))return;
+    if(R&&sj(d)===sj(R)) return;
     if(R&&isEditing()){deferred=true;return;}
     const wasLoaded=R!==null;
-    R=d;render();
+    R=d; render();
     if(wasLoaded){
       const el=document.getElementById('sync');
       if(el){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}
     }
   }catch(e){setStatus('err');}
 }
+
 function listen(){
-  if(!ONLINE||typeof EventSource==='undefined')return;
+  if(!ONLINE||typeof EventSource==='undefined') return;
   const es=new EventSource(endpoint);
-  es.addEventListener('put',refresh);es.addEventListener('patch',refresh);
-  es.onopen=()=>setStatus('ok');es.onerror=()=>setStatus('err');
+  es.addEventListener('put',refresh); es.addEventListener('patch',refresh);
+  es.onopen=()=>setStatus('ok'); es.onerror=()=>setStatus('err');
 }
+
 document.addEventListener('focusout',()=>{if(deferred){deferred=false;setTimeout(refresh,0);}});
 setInterval(refresh,15000);
 
@@ -252,48 +168,110 @@ function setStatus(s){
 }
 const syncLabel=()=>({ok:'● Synchronisé',err:'○ Hors ligne',wait:'○ Connexion…',demo:'◌ Mode démo'}[status]);
 
-/* ---------- Utilitaires ---------- */
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const pad=n=>String(n).padStart(2,'0');
+/* ── Utilitaires ── */
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function blocsParCol(colonne){
-  return S.blocs.filter(b=>b.colonne===colonne);
+const blocsParCol = col => S.blocs.filter(b=>b.colonne===col);
+
+function optHTML(obj,cur){
+  return Object.entries(obj)
+    .map(([k,v])=>{
+      const label = typeof v==='object' ? v.emoji+' '+v.label : v;
+      return `<option value="${k}" ${k===cur?'selected':''}>${esc(label)}</option>`;
+    }).join('');
 }
 
 function typeDistrib(blocs,types){
-  const byType={};let total=0;
+  const byType={}; let total=0;
   blocs.forEach(b=>{byType[b.type]=(byType[b.type]||0)+(b.duree||0);total+=b.duree||0;});
-  if(!total)return[];
-  return Object.entries(byType)
-    .sort((a,b)=>b[1]-a[1])
+  if(!total) return [];
+  return Object.entries(byType).sort((a,b)=>b[1]-a[1])
     .map(([k,min])=>({
+      key:k,
       emoji:(types[k]||{emoji:'•'}).emoji,
       label:(types[k]||{label:k}).label,
-      pct:Math.round(min/total*100),
-      min
+      pct:Math.round(min/total*100)
     }));
+}
+
+function calcEndTime(startHHMM, totalMin){
+  const parts=(startHHMM||'15:00').split(':');
+  const end = parseInt(parts[0]||15)*60 + parseInt(parts[1]||0) + totalMin;
+  return String(Math.floor(end/60)%24).padStart(2,'0')+'h'+String(end%60).padStart(2,'0');
 }
 
 function quiDistrib(blocs){
   const q={Tanguy:0,Bastos:0};
   blocs.forEach(b=>{
-    const ql=quiList(b.qui);const n=ql.length||1;
+    const ql=quiList(b.qui), n=ql.length||1;
     ql.forEach(name=>{
-      if(name==='Tanguy')q.Tanguy+=(b.duree||0)/n;
-      else if(name==='Bastos')q.Bastos+=(b.duree||0)/n;
+      if(name==='Tanguy')  q.Tanguy +=(b.duree||0)/n;
+      if(name==='Bastos')  q.Bastos +=(b.duree||0)/n;
     });
   });
   return q;
 }
 
 function knownUsers(){
-  if(!R||!R.blocs)return[];
-  return[...new Set(Object.values(R.blocs).map(b=>b.createdBy).filter(Boolean))].sort();
+  const names=new Set();
+  if(R&&R.users) Object.values(R.users).forEach(n=>n&&names.add(n));
+  if(R&&R.blocs) Object.values(R.blocs).forEach(b=>b.createdBy&&names.add(b.createdBy));
+  return [...names].sort();
 }
 
-/* ---------- Déplacement ---------- */
-function moveToCol(id,newColonne,targetId,after){
-  const colBlocs=S.blocs.filter(b=>b.colonne===newColonne&&b.id!==id);
+/* ── Verrous ── */
+function lockInfo(blockId){
+  if(!R||!R.locks) return null;
+  const lock=R.locks[blockId];
+  if(!lock) return null;
+  if((Date.now()-lock.since)>=LOCK_TTL) return null;
+  return lock;
+}
+
+function setEditing(id){
+  if(editing&&editing!==id&&ONLINE) sendSilent({['locks/'+editing]:null});
+  editing=id;
+  if(id&&ONLINE&&myPseudo) sendSilent({['locks/'+id]:{by:myPseudo,since:Date.now()}});
+  render();
+}
+
+window.addEventListener('beforeunload',()=>{
+  if(editing&&ONLINE){
+    try{
+      const xhr=new XMLHttpRequest();
+      xhr.open('PATCH',endpoint,false);
+      xhr.setRequestHeader('Content-Type','application/json');
+      xhr.send(JSON.stringify({['locks/'+editing]:null}));
+    }catch(_){}
+  }
+});
+
+/* ── Votes sur les blocs ── */
+function blockVotes(blockId){
+  if(!R||!R.votes||!R.votes[blockId]) return {up:{},down:{}};
+  const v=R.votes[blockId];
+  return {up:v.up||{}, down:v.down||{}};
+}
+
+function toggleVote(blockId,dir){
+  if(!myPseudo){toast('Choisis ton pseudo d\'abord.');return;}
+  const v=blockVotes(blockId);
+  const existing=v[dir][myPseudo];
+  sendSilent({['votes/'+blockId+'/'+dir+'/'+myPseudo]: existing?null:true});
+  render();
+}
+
+function showWhoVoted(blockId,dir){
+  const v=blockVotes(blockId);
+  const names=Object.keys(v[dir]);
+  if(!names.length) return;
+  toast((dir==='up'?'👍':'👎')+' '+names.join(', '));
+}
+
+/* ── Déplacement ── */
+function moveToCol(id,newCol,targetId,after){
+  const colBlocs=S.blocs.filter(b=>b.colonne===newCol&&b.id!==id);
   let pos;
   if(targetId===null){
     pos=colBlocs.length?colBlocs[colBlocs.length-1].pos+1:1;
@@ -308,43 +286,218 @@ function moveToCol(id,newColonne,targetId,after){
   }
   const patch={['blocs/'+id+'/pos']:pos};
   const cur=S.blocs.find(b=>b.id===id);
-  if(cur&&cur.colonne!==newColonne)patch['blocs/'+id+'/colonne']=newColonne;
+  if(cur&&cur.colonne!==newCol) patch['blocs/'+id+'/colonne']=newCol;
   update(patch);
 }
 
-/* ---------- Rendu ---------- */
+/* ── Popup ajout bloc ── */
+function showAddOverlay(defaultCol){
+  if(!S) return;
+  const col = defaultCol || 'a_trancher';
+  const ov  = document.getElementById('add-overlay');
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-hd">
+      <h2>Nouveau bloc</h2>
+      <button class="modal-close" data-act="closeAdd">✕</button>
+    </div>
+    <div class="grid">
+      <div class="full"><label>Titre *</label><input type="text" id="af-titre" placeholder="Nom du bloc…" autocomplete="off"></div>
+      <div><label>Type</label><select id="af-type">${optHTML(S.types,'autre')}</select></div>
+      <div><label>Durée (min)</label><input type="number" min="0" max="120" id="af-duree" value="5"></div>
+      <div class="full"><label>Qui</label><div class="qui-checks">${
+        S.quiArr.map(name=>`<label><input type="checkbox" class="af-qui" value="${esc(name)}"> ${esc(name)}</label>`).join('')
+      }</div></div>
+      <div class="full"><label>Colonne</label><select id="af-col">${optHTML(COLS,col)}</select></div>
+      <div class="full"><label>Musique</label><input type="text" id="af-musique" autocomplete="off"></div>
+      <div class="full"><label>Matériel</label><input type="text" id="af-materiel" autocomplete="off"></div>
+      <div class="full"><label>Notes / script</label><textarea id="af-notes"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="pri" data-act="confirmAdd">Créer →</button>
+      <button data-act="closeAdd">Annuler</button>
+    </div>
+  </div>`;
+  ov.style.display='flex';
+  const titreEl=document.getElementById('af-titre');
+  titreEl?.addEventListener('keydown',e=>{if(e.key==='Enter')confirmAdd();});
+  setTimeout(()=>titreEl?.focus(),100);
+}
+
+function confirmAdd(){
+  const titre=(document.getElementById('af-titre')?.value||'').trim();
+  if(!titre){toast('Donne un titre au bloc.');document.getElementById('af-titre')?.focus();return;}
+  const type    = document.getElementById('af-type')?.value||'autre';
+  const duree   = Math.max(0,parseInt(document.getElementById('af-duree')?.value)||0);
+  const qui     = [...document.querySelectorAll('.af-qui:checked')].map(el=>el.value).join(',');
+  const colonne = document.getElementById('af-col')?.value||'a_trancher';
+  const musique = (document.getElementById('af-musique')?.value||'').trim();
+  const materiel= (document.getElementById('af-materiel')?.value||'').trim();
+  const notes   = (document.getElementById('af-notes')?.value||'').trim();
+
+  const nid     = 'b'+uid();
+  const colBlocs= S.blocs.filter(b=>b.colonne===colonne);
+  const pos     = colBlocs.reduce((m,b)=>Math.max(m,b.pos),0)+1;
+  const newBlock= {...B(nid,titre,type,duree,qui,colonne),pos,createdBy:myPseudo,musique,materiel,notes};
+
+  document.getElementById('add-overlay').style.display='none';
+  update({['blocs/'+nid]:newBlock});
+}
+
+/* ── Chat ── */
+function chatLRKey(){ return 'chat_lr_'+(myPseudo||'anon'); }
+function getChatLR(){ return parseInt(localStorage.getItem(chatLRKey())||'0'); }
+function setChatLR(ts){ localStorage.setItem(chatLRKey(),ts); }
+
+function chatMessages(){
+  if(!R||!R.chat) return [];
+  return Object.entries(R.chat).map(([id,m])=>({id,...m})).sort((a,b)=>a.ts-b.ts);
+}
+
+function chatUnread(){
+  if(!myPseudo) return 0;
+  const lr=getChatLR();
+  return chatMessages().filter(m=>m.ts>lr&&m.by!==myPseudo).length;
+}
+
+function renderChatBtn(){
+  const btn=document.getElementById('chat-btn');
+  if(!btn) return;
+  const n=chatUnread();
+  btn.innerHTML='💬'+(n>0?`<span class="chat-badge">${n}</span>`:'');
+}
+
+function renderChat(){
+  const panel=document.getElementById('chat-panel');
+  if(!panel) return;
+  if(!chatOpen){ panel.style.display='none'; return; }
+
+  const prevInput=document.getElementById('chat-input')?.value||'';
+  const msgsEl0=document.getElementById('chat-msgs');
+  const wasAtBottom=!msgsEl0||(msgsEl0.scrollHeight-msgsEl0.scrollTop-msgsEl0.clientHeight<80);
+
+  panel.style.display='flex';
+
+  const msgs=chatMessages();
+  if(msgs.length){
+    const maxTs=Math.max(...msgs.map(m=>m.ts));
+    if(maxTs>getChatLR()) setChatLR(maxTs);
+  }
+  renderChatBtn();
+
+  const msgHTML=msgs.length?msgs.map(m=>{
+    const isMe=m.by===myPseudo;
+    const reactions=m.reactions||{};
+    const reactionHTML=EMOJIS.map(({k,e})=>{
+      const users=reactions[k]?Object.keys(reactions[k]):[];
+      const count=users.length;
+      const mine=myPseudo&&reactions[k]&&reactions[k][myPseudo];
+      const cls='react-btn'+(mine?' mine':'')+(count>0?' has-count':'');
+      return `<button class="${cls}" data-act="react" data-mid="${m.id}" data-ek="${k}">${e}${count>0?` <span>${count}</span>`:''}</button>`;
+    }).join('');
+    return `<div class="chat-msg${isMe?' me':''}">
+      <div class="msg-by">${esc(m.by)}</div>
+      <div class="msg-bubble">${esc(m.text)}</div>
+      <div class="msg-reactions">${reactionHTML}</div>
+    </div>`;
+  }).join(''):'<p class="chat-empty">Pas encore de messages.</p>';
+
+  panel.innerHTML=`
+    <div class="chat-hd">
+      <span class="chat-title">💬 Chat en direct</span>
+      <button class="modal-close" data-act="closeChat">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">${msgHTML}</div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Message…" autocomplete="off">
+      <button class="pri sm" data-act="sendChat">Envoyer</button>
+    </div>`;
+
+  const inputEl=document.getElementById('chat-input');
+  if(inputEl&&prevInput) inputEl.value=prevInput;
+  inputEl?.addEventListener('keydown',e=>{if(e.key==='Enter')doSendChat();});
+
+  const msgsEl=document.getElementById('chat-msgs');
+  if(msgsEl&&wasAtBottom) msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+function doSendChat(){
+  if(!myPseudo){toast('Choisis ton pseudo d\'abord.');return;}
+  const input=document.getElementById('chat-input');
+  if(!input) return;
+  const text=input.value.trim();
+  if(!text) return;
+  const mid='m'+uid();
+  const ts=Date.now();
+  sendSilent({['chat/'+mid]:{by:myPseudo,text,ts}});
+  input.value='';
+  setChatLR(ts);
+  renderChatBtn();
+  renderChat();
+}
+
+function toggleReaction(msgId,emojiKey){
+  if(!myPseudo){toast('Choisis ton pseudo d\'abord.');return;}
+  const msg=R?.chat?.[msgId];
+  if(!msg) return;
+  const path='chat/'+msgId+'/reactions/'+emojiKey+'/'+myPseudo;
+  const existing=msg.reactions?.[emojiKey]?.[myPseudo];
+  sendSilent({[path]:existing?null:true});
+  renderChat();
+}
+
+/* ── Rendu principal ── */
 function render(){
   const app=document.getElementById('app');
-  if(!R){app.innerHTML='<p class="sub">Chargement…</p>';return;}
+  if(!R){app.innerHTML='<p style="padding:20px;color:#6a5f52">Chargement…</p>';return;}
   S=view();
 
-  const deroule=blocsParCol('deroule');
-  const totalMin=deroule.reduce((s,b)=>s+(b.duree||0),0);
-  const quiD=quiDistrib(deroule);
-  const typeDist=typeDistrib(deroule,S.types);
+  const deroule   = blocsParCol('deroule');
+  const totalMin  = deroule.reduce((s,b)=>s+(b.duree||0),0);
+  const quiD      = quiDistrib(deroule);
+  const typeDist  = typeDistrib(deroule,S.types);
+  const mats      = S.blocs.filter(b=>b.materiel.trim());
+  const startHHMM = R.startTime||'15:00';
+  const endTime   = calcEndTime(startHHMM, totalMin);
+  const typeKeys  = Object.keys(S.types);
+  const typeColor = k => TYPE_COLORS[typeKeys.indexOf(k) % TYPE_COLORS.length];
 
-  const opt=(obj,cur)=>Object.entries(obj).map(([k,v])=>`<option value="${k}" ${k===cur?'selected':''}>${esc(typeof v==='object'?v.label:v)}</option>`).join('');
-  const optA=(arr,cur)=>arr.map(v=>`<option ${v===cur?'selected':''}>${esc(v)}</option>`).join('');
-
-  const form=b=>`<div class="form noprint">
+  const form = b => `<div class="form noprint">
     <div class="grid">
       <div class="full"><label>Titre</label><input type="text" data-f="titre" data-id="${b.id}" value="${esc(b.titre)}"></div>
-      <div><label>Type</label><select data-f="type" data-id="${b.id}">${opt(S.types,b.type)}</select></div>
+      <div><label>Type</label><select data-f="type" data-id="${b.id}">${optHTML(S.types,b.type)}</select></div>
       <div><label>Durée (min)</label><input type="number" min="0" max="120" data-f="duree" data-id="${b.id}" value="${b.duree}"></div>
-      <div class="full"><label>Qui</label><div class="qui-checks">${S.quiArr.map(name=>`<label><input type="checkbox" data-fq="${b.id}" value="${esc(name)}" ${quiList(b.qui).includes(name)?'checked':''}> ${esc(name)}</label>`).join('')}</div></div>
-      <div><label>Colonne</label><select data-f="colonne" data-id="${b.id}">${opt(COLS,b.colonne)}</select></div>
+      <div class="full"><label>Qui</label><div class="qui-checks">${
+        S.quiArr.map(name=>`<label><input type="checkbox" data-fq="${b.id}" value="${esc(name)}" ${quiList(b.qui).includes(name)?'checked':''}> ${esc(name)}</label>`).join('')
+      }</div></div>
+      <div><label>Colonne</label><select data-f="colonne" data-id="${b.id}">${optHTML(COLS,b.colonne)}</select></div>
       <div><label>Musique</label><input type="text" data-f="musique" data-id="${b.id}" value="${esc(b.musique)}"></div>
       <div class="full"><label>Matériel</label><input type="text" data-f="materiel" data-id="${b.id}" value="${esc(b.materiel)}"></div>
       <div class="full"><label>Notes / script</label><textarea data-f="notes" data-id="${b.id}">${esc(b.notes)}</textarea></div>
     </div></div>`;
 
-  const renderCol=colKey=>{
-    const blocs=blocsParCol(colKey);
-    const cards=blocs.map((b,i)=>{
-      const isEd=editing===b.id;
-      const typeInfo=S.types[b.type]||{emoji:'•'};
-      return`<article class="card" data-id="${b.id}" data-col="${b.colonne}" ${isEd?'':'draggable="true"'}>
+  const renderCol = colKey => {
+    const blocs  = blocsParCol(colKey);
+    const colIdx = COL_ORDER.indexOf(colKey);
+    const disLeft  = colIdx === 0;
+    const disRight = colIdx === COL_ORDER.length - 1;
+    const leftTitle  = !disLeft  ? COLS[COL_ORDER[colIdx-1]] : '';
+    const rightTitle = !disRight ? COLS[COL_ORDER[colIdx+1]] : '';
+
+    const cards = blocs.map((b,i) => {
+      const isEd = editing===b.id;
+      const lock = lockInfo(b.id);
+      const lockedByOther = lock&&lock.by!==myPseudo;
+      const typeInfo = S.types[b.type]||{emoji:'•'};
+
+      const v=blockVotes(b.id);
+      const upVoters=Object.keys(v.up), downVoters=Object.keys(v.down);
+      const upCount=upVoters.length, downCount=downVoters.length;
+      const myUp  =myPseudo&&upVoters.includes(myPseudo);
+      const myDown=myPseudo&&downVoters.includes(myPseudo);
+
+      return `<article class="card${lockedByOther?' locked':''}" data-id="${b.id}" data-col="${b.colonne}" ${isEd||lockedByOther?'':'draggable="true"'}>
         <div class="card-body">
+          ${lockedByOther?`<div class="lock-badge">🔒 ${esc(lock.by)} modifie ce bloc…</div>`:''}
           <h3>${typeInfo.emoji} ${esc(b.titre)}</h3>
           <div class="card-meta">
             ${quiList(b.qui).map(q=>`<span class="chip">${esc(q)}</span>`).join('')}
@@ -353,65 +506,69 @@ function render(){
             ${b.createdBy?`<span class="chip by">✍ ${esc(b.createdBy)}</span>`:''}
           </div>
           ${b.notes&&!isEd?`<p class="card-note">${esc(b.notes)}</p>`:''}
+          ${!isEd?`<div class="card-votes noprint">
+            <button class="vote-btn${myUp?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="up">👍${upCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="up">${upCount}</span>`:''}</button>
+            <button class="vote-btn${myDown?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="down">👎${downCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="down">${downCount}</span>`:''}</button>
+          </div>`:''}
           ${isEd?form(b):''}
         </div>
         <div class="act noprint">
-          <button class="sm" data-act="up"   data-id="${b.id}" ${i===0?'disabled':''}>↑</button>
-          <button class="sm" data-act="down" data-id="${b.id}" ${i===blocs.length-1?'disabled':''}>↓</button>
-          <button class="sm" data-act="edit" data-id="${b.id}">${isEd?'✓':'✎'}</button>
-          <button class="sm" data-act="del"  data-id="${b.id}">🗑</button>
+          <button class="sm" data-act="up"       data-id="${b.id}" ${i===0?'disabled':''}>↑</button>
+          <button class="sm" data-act="down"     data-id="${b.id}" ${i===blocs.length-1?'disabled':''}>↓</button>
+          <button class="sm" data-act="colLeft"  data-id="${b.id}" ${disLeft?'disabled':''} title="${esc(leftTitle)}">←</button>
+          <button class="sm" data-act="colRight" data-id="${b.id}" ${disRight?'disabled':''} title="${esc(rightTitle)}">→</button>
+          <button class="sm" data-act="edit"     data-id="${b.id}" ${lockedByOther?'disabled':''}>${isEd?'✓':'✎'}</button>
+          <button class="sm" data-act="del"      data-id="${b.id}" ${lockedByOther?'disabled':''}>🗑</button>
         </div>
       </article>`;
     }).join('');
-    return`<div class="col" data-col="${colKey}">
+
+    return `<div class="col" data-col="${colKey}">
       <div class="col-hd">
         <h2>${COLS[colKey]} <span class="cnt">${blocs.length}</span></h2>
-        <button class="sm noprint" data-act="add" data-col="${colKey}">+ Ajouter</button>
       </div>
-      ${cards||'<p class="empty">Vide — dépose un bloc ici.</p>'}
+      <div class="col-body">
+        ${cards||'<p class="empty">Vide — dépose un bloc ici.</p>'}
+      </div>
     </div>`;
   };
 
-  const mats=S.blocs.filter(b=>b.materiel.trim());
-
-  // Paramètres : types
-  const typesRows=Object.entries(S.types).map(([k,t])=>`
-    <div class="param-row">
-      <span>${t.emoji} ${esc(t.label)}</span>
-    </div>`).join('');
-
-  // Paramètres : qui
-  const quiRows=Object.entries(S.qui).map(([k,v])=>`
-    <div class="param-row">
-      <span>${esc(v)}</span>
-      <button class="sm noprint" data-act="delQui" data-key="${k}">×</button>
-    </div>`).join('');
-
-  app.innerHTML=`
+  app.innerHTML = `
     <div class="hd">
-      <div style="display:flex;align-items:center;gap:10px">
-        <img src="gigi.webp" alt="" style="width:46px;height:46px;min-width:46px;border-radius:50%;object-fit:contain;background:var(--bg);border:2px solid var(--line)">
+      <div class="hd-left">
+        <img src="gigi.webp" alt="" class="logo">
         <h1>Déroulé cérémonie</h1>
       </div>
-      <button class="pseudo-chip noprint" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Choisir un pseudo'}</button>
+      <div class="hd-right">
+        <button class="pseudo-chip noprint" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
+        <button class="pri sm noprint" data-act="openAdd">+ Ajouter</button>
+        <button class="icon-btn noprint" data-act="openSettings" title="Paramètres">⚙</button>
+      </div>
     </div>
     <p class="sub"><span id="sync" class="sync ${status}">${syncLabel()}</span></p>
-    ${ONLINE?'':'<div class="panel noprint"><p style="margin:0;font-size:.88rem">Mode démo : renseigne <b>DB_URL</b> en haut du fichier pour activer la synchronisation.</p></div>'}
+    ${ONLINE?'':'<div class="panel noprint"><p style="margin:0;font-size:.86rem">Mode démo — renseigne <b>DB_URL</b> en haut du fichier.</p></div>'}
 
     <section class="panel">
       <h2>Bilan — déroulé</h2>
       <div class="sum">
-        <span>Déroulé <b>${deroule.length} blocs</b> · <b>${totalMin} min</b></span>
-        <span style="color:var(--mut);font-size:.82rem">À trancher ${blocsParCol('a_trancher').length} · Validé ${blocsParCol('valide').length}</span>
+        <span>Début <input type="time" id="start-time-input" class="time-inline" value="${startHHMM}"> → Fin <b>${endTime}</b></span>
+        <span><b>${deroule.length} blocs</b> · <b>${totalMin} min</b></span>
+        <span style="font-size:.79rem;color:var(--mut)">Validé ${blocsParCol('valide').length} · À discuter ${blocsParCol('a_trancher').length}</span>
       </div>
-      ${typeDist.length?`<div class="type-pills">${typeDist.map(t=>`<span class="tpill">${t.emoji} ${esc(t.label)} <b>${t.pct}%</b></span>`).join('')}</div>`:''}
+      ${typeDist.length?`
+      <div class="type-gauge">
+        ${typeDist.map(t=>`<div class="tg-seg" style="flex:${t.pct};background:${typeColor(t.key)}" title="${t.emoji} ${esc(t.label)} ${t.pct}%"></div>`).join('')}
+      </div>
+      <div class="type-legend">
+        ${typeDist.map(t=>`<span class="tl-item"><span class="tl-dot" style="background:${typeColor(t.key)}"></span>${t.emoji} ${esc(t.label)} <b>${t.pct}%</b></span>`).join('')}
+      </div>`:''}
       ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${Math.round(quiD.Tanguy)} min · Bastos ${Math.round(quiD.Bastos)} min</p>`:''}
     </section>
 
     <div class="columns">
       ${renderCol('deroule')}
-      ${renderCol('a_trancher')}
       ${renderCol('valide')}
+      ${renderCol('a_trancher')}
     </div>
 
     ${mats.length?`<section class="panel">
@@ -419,142 +576,231 @@ function render(){
       <ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span style="color:var(--mut)">— ${esc(b.titre)}</span></li>`).join('')}</ul>
     </section>`:''}
 
-    <section class="panel noprint">
-      <details>
-        <summary>Paramètres</summary>
-        <div class="inner">
-          <div style="margin-bottom:14px">
-            <div style="font-size:.8rem;font-weight:600;margin-bottom:6px">Types de blocs</div>
-            ${typesRows}
-            <div class="add-row">
-              <input class="emoji-in" type="text" id="new-type-emoji" placeholder="🎯" maxlength="2">
-              <input type="text" id="new-type-label" placeholder="Nom du type…">
-              <button class="sm" data-act="addType">+ Ajouter</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:.8rem;font-weight:600;margin-bottom:6px">Intervenants</div>
-            ${quiRows}
-            <div class="add-row">
-              <input type="text" id="new-qui" placeholder="Prénom ou rôle…">
-              <button class="sm" data-act="addQui">+ Ajouter</button>
-            </div>
-          </div>
-        </div>
-      </details>
-    </section>
-
     <div class="row noprint">
       <button data-act="print">Imprimer / PDF</button>
-      <button data-act="reset">Réinitialiser</button>
+      ${myPseudo==='Tanguy'?`<button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button>`:''}
     </div>`;
 
-  // Afficher l'overlay pseudo si nécessaire
   if(!myPseudo) showPseudoOverlay();
+  renderChatBtn();
+  renderChat();
 }
 
+/* ── Toast ── */
 function toast(msg){
-  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');
-  clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),1800);
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
+  clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),2500);
 }
 
-/* ---------- Overlay pseudo ---------- */
-function showPseudoOverlay(){
+/* ── Overlay pseudo ── */
+function showPseudoOverlay(prefill=''){
   const ov=document.getElementById('pseudo-overlay');
-  const known=knownUsers();
+  const known=[...new Set([...knownUsers(),prefill].filter(Boolean))];
   ov.innerHTML=`<div class="modal">
-    <h2>Qui es-tu ?</h2>
+    <div class="modal-hd"><h2>Qui es-tu ?</h2></div>
     <p>Choisis ton pseudo puis entre le mot de passe.</p>
     ${known.length?`<div class="pseudo-picks">${known.map(u=>`<button class="chip-btn" data-pseudo="${esc(u)}">${esc(u)}</button>`).join('')}</div>`:''}
-    <input type="text" id="pseudo-input" placeholder="Ton prénom…" autocomplete="off" style="margin-bottom:8px">
-    <input type="password" id="pwd-input" placeholder="Mot de passe…" autocomplete="off" style="margin-bottom:4px">
-    <div id="pwd-err" style="display:none;color:var(--warn);font-size:.82rem;margin-bottom:8px">Mot de passe incorrect.</div>
-    <button class="pri" id="pseudo-ok" style="width:100%;margin-top:6px">Continuer →</button>
+    <input type="text"     id="pseudo-input" placeholder="Ton prénom…"   autocomplete="off" style="margin-bottom:8px">
+    <input type="password" id="pwd-input"    placeholder="Mot de passe…" autocomplete="off" style="margin-bottom:4px">
+    <div id="pwd-err" style="display:none;color:var(--warn);font-size:.82rem;font-weight:600;margin-bottom:6px">Mot de passe incorrect.</div>
+    <button class="pri" id="pseudo-ok" style="width:100%;margin-top:8px">Continuer →</button>
   </div>`;
   ov.style.display='flex';
   ov.querySelectorAll('.chip-btn').forEach(b=>b.addEventListener('click',()=>{
     document.getElementById('pseudo-input').value=b.dataset.pseudo;
     document.getElementById('pwd-input').focus();
   }));
-  document.getElementById('pseudo-ok').addEventListener('click',()=>confirmPseudo());
+  document.getElementById('pseudo-ok').addEventListener('click',confirmPseudo);
   document.getElementById('pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPseudo();});
-  setTimeout(()=>document.getElementById('pseudo-input')?.focus(),100);
+  if(prefill){
+    document.getElementById('pseudo-input').value=prefill;
+    setTimeout(()=>document.getElementById('pwd-input')?.focus(),100);
+  }else{
+    setTimeout(()=>document.getElementById('pseudo-input')?.focus(),100);
+  }
 }
 
 function confirmPseudo(){
   const name=(document.getElementById('pseudo-input')?.value||'').trim();
-  const pwd=(document.getElementById('pwd-input')?.value||'');
+  const pwd =(document.getElementById('pwd-input')?.value||'');
   if(!name){document.getElementById('pseudo-input')?.focus();return;}
   if(pwd!==PWD){
     const err=document.getElementById('pwd-err');
-    if(err)err.style.display='block';
-    document.getElementById('pwd-input')?.select();
-    return;
+    if(err) err.style.display='block';
+    document.getElementById('pwd-input')?.select(); return;
   }
   myPseudo=name;
   localStorage.setItem('ceremonie_pseudo',name);
   localStorage.setItem('ceremonie_auth','1');
   document.getElementById('pseudo-overlay').style.display='none';
+  if(R){
+    const existing=R.users?Object.values(R.users):[];
+    if(!existing.includes(name)) update({['users/u'+uid()]:name});
+  }
   render();
 }
 
-/* ---------- Interactions ---------- */
+/* ── Paramètres popup ── */
+function typesListHTML(){
+  if(!S) return '';
+  return Object.entries(S.types).map(([k,t])=>`
+    <div class="param-row">
+      <span>${t.emoji} ${esc(t.label)}</span>
+      <button class="sm noprint" data-act="delType" data-key="${k}">×</button>
+    </div>`).join('');
+}
+function quiListHTML(){
+  if(!S) return '';
+  return Object.entries(S.qui).map(([k,v])=>`
+    <div class="param-row">
+      <span>${esc(v)}</span>
+      <button class="sm noprint" data-act="delQui" data-key="${k}">×</button>
+    </div>`).join('');
+}
+
+function showSettings(){
+  const ov=document.getElementById('settings-overlay');
+  ov.innerHTML=`<div class="modal">
+    <div class="modal-hd">
+      <h2>Paramètres</h2>
+      <button class="modal-close" data-act="closeSettings">✕</button>
+    </div>
+    <div class="settings-section">
+      <h3>Types de blocs</h3>
+      <div id="stypes">${typesListHTML()}</div>
+      <div class="add-row">
+        <input class="emoji-in" type="text" id="new-type-emoji" placeholder="🎯" maxlength="2">
+        <input type="text" id="new-type-label" placeholder="Nom du type…">
+        <button class="sm" data-act="addType">+ Ajouter</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Intervenants</h3>
+      <div id="squi">${quiListHTML()}</div>
+      <div class="add-row">
+        <input type="text" id="new-qui" placeholder="Prénom ou rôle…">
+        <button class="sm" data-act="addQui">+ Ajouter</button>
+      </div>
+    </div>
+  </div>`;
+  ov.style.display='flex';
+}
+
+function updateSettingsIfOpen(){
+  const ov=document.getElementById('settings-overlay');
+  if(ov.style.display==='none') return;
+  if(S){
+    const tl=document.getElementById('stypes');
+    const ql=document.getElementById('squi');
+    if(tl) tl.innerHTML=typesListHTML();
+    if(ql) ql.innerHTML=quiListHTML();
+  }
+}
+
+/* ── Interactions ── */
 document.addEventListener('click',e=>{
-  const el=e.target.closest('[data-act]');if(!el)return;
-  const act=el.dataset.act,id=el.dataset.id;
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const act=el.dataset.act, id=el.dataset.id;
 
   if(act==='up'||act==='down'){
-    const b=S.blocs.find(x=>x.id===id);if(!b)return;
-    const col=blocsParCol(b.colonne);
-    const k=col.findIndex(x=>x.id===id);
+    const b=S.blocs.find(x=>x.id===id); if(!b) return;
+    const col=blocsParCol(b.colonne), k=col.findIndex(x=>x.id===id);
     if(act==='up'&&k>0)              moveToCol(id,b.colonne,col[k-1].id,false);
     if(act==='down'&&k<col.length-1) moveToCol(id,b.colonne,col[k+1].id,true);
   }
-  else if(act==='edit'){editing=editing===id?null:id;render();}
+  else if(act==='colLeft'||act==='colRight'){
+    const b=S.blocs.find(x=>x.id===id); if(!b) return;
+    const idx=COL_ORDER.indexOf(b.colonne);
+    const newIdx=act==='colLeft'?idx-1:idx+1;
+    if(newIdx>=0&&newIdx<COL_ORDER.length) moveToCol(id,COL_ORDER[newIdx],null,true);
+  }
+  else if(act==='edit'){
+    const lock=lockInfo(id);
+    if(lock&&lock.by!==myPseudo){toast('🔒 '+lock.by+' modifie ce bloc.');return;}
+    setEditing(editing===id?null:id);
+  }
   else if(act==='del'){
-    if(confirm('Supprimer ce bloc ?')){if(editing===id)editing=null;update({['blocs/'+id]:null});}
+    if(confirm('Supprimer ce bloc ?')){
+      if(editing===id) setEditing(null);
+      update({['blocs/'+id]:null,['locks/'+id]:null});
+    }
   }
-  else if(act==='add'){
-    const colonne=el.dataset.col||'a_trancher';
-    const nid='b'+uid();
-    const colBlocs=S.blocs.filter(b=>b.colonne===colonne);
-    const pos=colBlocs.reduce((m,b)=>Math.max(m,b.pos),0)+1;
-    editing=nid;
-    update({['blocs/'+nid]:{...B(nid,'Nouveau bloc','autre',5,'—',colonne),pos,createdBy:myPseudo}});
-  }
+  else if(act==='openAdd')   showAddOverlay();
+  else if(act==='closeAdd')  document.getElementById('add-overlay').style.display='none';
+  else if(act==='confirmAdd') confirmAdd();
+  else if(act==='vote')      toggleVote(id, el.dataset.dir);
+  else if(act==='whoVoted')  showWhoVoted(id||el.dataset.id, el.dataset.dir);
   else if(act==='addType'){
-    const emoji=(document.getElementById('new-type-emoji').value||'•').trim();
-    const label=(document.getElementById('new-type-label').value||'').trim();
+    const emoji=(document.getElementById('new-type-emoji')?.value||'•').trim();
+    const label=(document.getElementById('new-type-label')?.value||'').trim();
     if(!label){toast('Donne un nom au type.');return;}
     update({['types/t'+uid()]:{label,emoji}});
+    if(document.getElementById('new-type-label')) document.getElementById('new-type-label').value='';
+    if(document.getElementById('new-type-emoji')) document.getElementById('new-type-emoji').value='';
+  }
+  else if(act==='delType'){
+    const key=el.dataset.key;
+    if(S.blocs.some(b=>b.type===key)){toast('Ce type est utilisé dans des blocs.');return;}
+    update({['types/'+key]:null});
   }
   else if(act==='addQui'){
-    const name=(document.getElementById('new-qui').value||'').trim();
+    const name=(document.getElementById('new-qui')?.value||'').trim();
     if(!name){toast('Saisis un nom.');return;}
     update({['qui/q'+uid()]:name});
+    if(document.getElementById('new-qui')) document.getElementById('new-qui').value='';
   }
   else if(act==='delQui'){
-    const key=el.dataset.key;
-    const name=S.qui[key];
+    const key=el.dataset.key, name=S.qui[key];
     if(S.blocs.some(b=>quiList(b.qui).includes(name))){toast('Ce nom est utilisé dans des blocs.');return;}
     update({['qui/'+key]:null});
   }
+  else if(act==='openSettings')  showSettings();
+  else if(act==='closeSettings') document.getElementById('settings-overlay').style.display='none';
   else if(act==='changePseudo'){
-    myPseudo='';localStorage.removeItem('ceremonie_pseudo');localStorage.removeItem('ceremonie_auth');showPseudoOverlay();
+    const prev=myPseudo;
+    myPseudo=''; localStorage.removeItem('ceremonie_pseudo'); localStorage.removeItem('ceremonie_auth');
+    showPseudoOverlay(prev);
   }
-  else if(act==='print') window.print();
+  else if(act==='toggleChat'){
+    chatOpen=!chatOpen;
+    renderChat();
+    if(chatOpen){
+      setTimeout(()=>{
+        const m=document.getElementById('chat-msgs');
+        if(m) m.scrollTop=m.scrollHeight;
+        document.getElementById('chat-input')?.focus();
+      },50);
+    }
+    renderChatBtn();
+  }
+  else if(act==='closeChat'){
+    chatOpen=false;
+    renderChat();
+    renderChatBtn();
+  }
+  else if(act==='sendChat') doSendChat();
+  else if(act==='react')    toggleReaction(el.dataset.mid, el.dataset.ek);
+  else if(act==='print')    window.print();
   else if(act==='reset'){
-    if(confirm('Tout remettre à zéro pour tout le monde ?')){editing=null;replaceAll(defaultDoc());}
+    if(myPseudo!=='Tanguy'){toast('Seul Tanguy peut réinitialiser.');return;}
+    if(confirm('Tout remettre à zéro pour tout le monde ?')){
+      if(editing) setEditing(null);
+      replaceAll(defaultDoc());
+    }
   }
 });
 
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.id==='start-time-input'){
+    update({'startTime':el.value}); return;
+  }
   if(el.dataset.fq){
     const bid=el.dataset.fq;
-    const b=S.blocs.find(x=>x.id===bid);if(!b)return;
+    const b=S.blocs.find(x=>x.id===bid); if(!b) return;
     const cur=new Set(quiList(b.qui));
-    if(el.checked)cur.add(el.value);else cur.delete(el.value);
+    if(el.checked) cur.add(el.value); else cur.delete(el.value);
     update({['blocs/'+bid+'/qui']:[...cur].join(',')});
     return;
   }
@@ -565,30 +811,59 @@ document.addEventListener('change',e=>{
   }
 });
 
-/* ---------- Drag & Drop ---------- */
+/* ── Drag & Drop ── */
 let dragId=null;
 
+function placeDropLine(refEl, before){
+  document.getElementById('drop-line')?.remove();
+  const line=document.createElement('div');
+  line.id='drop-line'; line.className='drop-line';
+  if(before) refEl.before(line); else refEl.after(line);
+}
+function removeDropLine(){ document.getElementById('drop-line')?.remove(); }
+
 document.addEventListener('dragstart',e=>{
-  const c=e.target.closest&&e.target.closest('.card');if(!c)return;
-  dragId=c.dataset.id;c.classList.add('drag');
-  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId);
+  const c=e.target.closest('.card'); if(!c) return;
+  dragId=c.dataset.id; c.classList.add('drag');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',dragId);
 });
+
 document.addEventListener('dragover',e=>{
-  if(!dragId)return;
-  const col=e.target.closest('.col');if(!col)return;
+  if(!dragId) return;
+  const col=e.target.closest('.col'); if(!col) return;
   e.preventDefault();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   col.classList.add('drag-over');
+
+  const card=e.target.closest('.card');
+  if(card&&card.dataset.id!==dragId&&card.id!=='drop-line'){
+    const r=card.getBoundingClientRect();
+    const isBefore=e.clientY<=r.top+r.height/2;
+    placeDropLine(card,isBefore);
+  } else if(!card){
+    const body=col.querySelector('.col-body');
+    if(body){
+      const cards=[...body.querySelectorAll('.card:not(.drag)')];
+      if(cards.length) placeDropLine(cards[cards.length-1],false);
+    }
+  }
 });
+
 document.addEventListener('dragleave',e=>{
   const col=e.target.closest('.col');
-  if(col&&!col.contains(e.relatedTarget))col.classList.remove('drag-over');
+  if(col&&!col.contains(e.relatedTarget)){
+    col.classList.remove('drag-over');
+    removeDropLine();
+  }
 });
+
 document.addEventListener('drop',e=>{
-  const col=e.target.closest('.col');if(!dragId||!col)return;
+  const col=e.target.closest('.col'); if(!dragId||!col) return;
   e.preventDefault();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
-  const id=dragId;dragId=null;
+  removeDropLine();
+  const id=dragId; dragId=null;
   const newColonne=col.dataset.col;
   const card=e.target.closest('.card');
   if(card&&card.dataset.id!==id){
@@ -598,9 +873,10 @@ document.addEventListener('drop',e=>{
     moveToCol(id,newColonne,null,true);
   }
 });
-document.addEventListener('dragend',()=>{dragId=null;render();});
 
-/* ---------- Init ---------- */
+document.addEventListener('dragend',()=>{ dragId=null; removeDropLine(); render(); });
+
+/* ── Init ── */
 (async function init(){
   if(!ONLINE){R=defaultDoc();render();return;}
   render();
