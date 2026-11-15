@@ -474,6 +474,30 @@ button:disabled { opacity: .3; pointer-events: none; }
 }
 .toast.on { opacity: 1; }
 
+/* ── Notes partagées ── */
+.snote {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.snote:last-of-type { border-bottom: none; padding-bottom: 4px; }
+.snote-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.snote-text {
+  margin: 0; font-size: .88rem; line-height: 1.45;
+  white-space: pre-wrap; color: var(--ink);
+}
+.add-note-row {
+  display: flex; gap: 8px; align-items: flex-end;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.add-note-row textarea {
+  flex: 1; min-height: 52px; resize: none;
+}
+.add-note-row button { flex-shrink: 0; }
+
 /* ── Misc ── */
 .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 ul.l { margin: 4px 0 0; padding-left: 18px; }

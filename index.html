@@ -61,7 +61,7 @@ const B = (id,titre,type,duree,qui,colonne,extra={}) =>
   ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',createdBy:'',...extra});
 
 function defaultDoc(){
-  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}};
+  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}, sharedNotes:{}};
 }
 
 /* ── Normalisation ── */
@@ -492,6 +492,29 @@ function toggleReaction(msgId,emojiKey){
   renderChat();
 }
 
+/* ── Notes partagées ── */
+function renderSharedNotes(){
+  const notes=R.sharedNotes
+    ? Object.entries(R.sharedNotes).map(([id,n])=>({id,...n})).sort((a,b)=>a.ts-b.ts)
+    : [];
+  const notesHTML=notes.map(n=>`
+    <div class="snote">
+      <div class="snote-hd">
+        <span class="chip by">${esc(n.by)}</span>
+        ${n.by===myPseudo?`<button class="ghost sm" data-act="delNote" data-nid="${n.id}" style="padding:2px 7px;min-height:24px">×</button>`:''}
+      </div>
+      <p class="snote-text">${esc(n.text)}</p>
+    </div>`).join('');
+  return `<section class="panel">
+    <h2>Notes partagées</h2>
+    ${notesHTML||'<p style="color:var(--mut);font-size:.83rem;font-style:italic;margin:0 0 8px">Aucune note pour l\'instant.</p>'}
+    <div class="add-note-row noprint">
+      <textarea id="new-note-text" placeholder="Ajouter une note…"></textarea>
+      <button class="sm" data-act="addNote">Ajouter</button>
+    </div>
+  </section>`;
+}
+
 /* ── Rendu principal ── */
 function render(){
   const app=document.getElementById('app');
@@ -617,6 +640,8 @@ function render(){
       ${renderCol('valide')}
       ${renderCol('a_trancher')}
     </div>
+
+    ${renderSharedNotes()}
 
     ${mats.length?`<section class="panel">
       <h2>Matériel</h2>
@@ -770,6 +795,16 @@ document.addEventListener('click',e=>{
       if(editing===id) setEditing(null);
       update({['blocs/'+id]:null,['locks/'+id]:null});
     }
+  }
+  else if(act==='addNote'){
+    const text=(document.getElementById('new-note-text')?.value||'').trim();
+    if(!text){toast('Écris quelque chose.');return;}
+    if(!myPseudo){toast('Choisis ton pseudo d\'abord.');return;}
+    update({['sharedNotes/n'+uid()]:{by:myPseudo,text,ts:Date.now()}});
+  }
+  else if(act==='delNote'){
+    const note=R.sharedNotes?.[el.dataset.nid];
+    if(note&&note.by===myPseudo) update({['sharedNotes/'+el.dataset.nid]:null});
   }
   else if(act==='openAdd')   showAddOverlay();
   else if(act==='closeAdd')  document.getElementById('add-overlay').style.display='none';
