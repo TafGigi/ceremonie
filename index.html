@@ -201,6 +201,12 @@ function calcEndTime(startHHMM, totalMin){
   return String(Math.floor(end/60)%24).padStart(2,'0')+'h'+String(end%60).padStart(2,'0');
 }
 
+function fmtDur(min){
+  if(min<60) return min+'min';
+  const h=Math.floor(min/60), m=min%60;
+  return m ? h+'h'+String(m).padStart(2,'0') : h+'h';
+}
+
 function quiDistrib(blocs){
   const q={Tanguy:0,Bastos:0};
   blocs.forEach(b=>{
@@ -501,7 +507,7 @@ function render(){
           <h3>${typeInfo.emoji} ${esc(b.titre)}</h3>
           <div class="card-meta">
             ${quiList(b.qui).map(q=>`<span class="chip">${esc(q)}</span>`).join('')}
-            ${b.duree?`<span>${b.duree} min</span>`:''}
+            ${b.duree?`<span>${fmtDur(b.duree)}</span>`:''}
             ${b.musique?`<span>🎵 ${esc(b.musique)}</span>`:''}
             ${b.createdBy?`<span class="chip by">✍ ${esc(b.createdBy)}</span>`:''}
           </div>
@@ -552,7 +558,7 @@ function render(){
       <h2>Bilan — déroulé</h2>
       <div class="sum">
         <span>Début <input type="time" id="start-time-input" class="time-inline" value="${startHHMM}"> → Fin <b>${endTime}</b></span>
-        <span><b>${deroule.length} blocs</b> · <b>${totalMin} min</b></span>
+        <span><b>${deroule.length} blocs</b> · <b>${fmtDur(totalMin)}</b></span>
         <span style="font-size:.79rem;color:var(--mut)">Validé ${blocsParCol('valide').length} · À discuter ${blocsParCol('a_trancher').length}</span>
       </div>
       ${typeDist.length?`
@@ -562,7 +568,7 @@ function render(){
       <div class="type-legend">
         ${typeDist.map(t=>`<span class="tl-item"><span class="tl-dot" style="background:${typeColor(t.key)}"></span>${t.emoji} ${esc(t.label)} <b>${t.pct}%</b></span>`).join('')}
       </div>`:''}
-      ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${Math.round(quiD.Tanguy)} min · Bastos ${Math.round(quiD.Bastos)} min</p>`:''}
+      ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${fmtDur(Math.round(quiD.Tanguy))} · Bastos ${fmtDur(Math.round(quiD.Bastos))}</p>`:''}
     </section>
 
     <div class="columns">
