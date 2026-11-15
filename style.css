@@ -509,7 +509,7 @@ ul.l li { margin: 3px 0; font-size: .88rem; }
   position: fixed;
   bottom: 92px; right: 20px;
   width: 360px; height: 520px;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 104px);
   background: var(--card);
   border-radius: 18px;
   box-shadow: var(--sh2), 0 0 0 1px var(--line);
@@ -520,14 +520,22 @@ ul.l li { margin: 3px 0; font-size: .88rem; }
 
 /* Portrait mobile */
 @media (max-width: 480px) {
-  #chat-panel { inset: 0; width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
-  #chat-btn   { bottom: 16px; right: 16px; }
+  #chat-panel {
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%; max-height: 100%;
+    border-radius: 0;
+  }
+  #chat-btn { bottom: 16px; right: 16px; }
 }
 
-/* Paysage mobile (hauteur faible) */
+/* Paysage mobile (hauteur réduite) */
 @media (max-height: 500px) {
-  #chat-panel { inset: 0; width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
-  #chat-btn   { bottom: 8px; right: 12px; }
+  #chat-panel {
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%; max-height: 100%;
+    border-radius: 0;
+  }
+  #chat-btn { bottom: 8px; right: 12px; }
 }
 
 .chat-hd {
@@ -567,6 +575,15 @@ ul.l li { margin: 3px 0; font-size: .88rem; }
 .react-btn.has-count { border-color: var(--line); background: var(--bg); }
 .react-btn.mine { background: #fff3ee; border-color: var(--acc); }
 .react-btn.mine span { color: var(--acc); }
+
+.typing-indicator {
+  min-height: 20px;
+  padding: 0 14px 4px;
+  font-size: .76rem;
+  color: var(--mut);
+  font-style: italic;
+  flex-shrink: 0;
+}
 
 .chat-input-row {
   display: flex; gap: 8px; padding: 10px 12px;

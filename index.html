@@ -55,12 +55,13 @@ let R = null, S = null, editing = null;
 let inflight = 0, chain = Promise.resolve(), deferred = false;
 let status = ONLINE ? 'wait' : 'demo';
 let chatOpen = false;
+let typingTimer = null;
 
 const B = (id,titre,type,duree,qui,colonne,extra={}) =>
   ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',createdBy:'',...extra});
 
 function defaultDoc(){
-  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00'};
+  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}};
 }
 
 /* ── Normalisation ── */
@@ -243,12 +244,16 @@ function setEditing(id){
 }
 
 window.addEventListener('beforeunload',()=>{
-  if(editing&&ONLINE){
+  if(!ONLINE) return;
+  const patch={};
+  if(editing) patch['locks/'+editing]=null;
+  if(myPseudo) patch['typing/'+myPseudo]=null;
+  if(Object.keys(patch).length){
     try{
       const xhr=new XMLHttpRequest();
       xhr.open('PATCH',endpoint,false);
       xhr.setRequestHeader('Content-Type','application/json');
-      xhr.send(JSON.stringify({['locks/'+editing]:null}));
+      xhr.send(JSON.stringify(patch));
     }catch(_){}
   }
 });
@@ -349,6 +354,35 @@ function confirmAdd(){
   update({['blocs/'+nid]:newBlock});
 }
 
+/* ── Typing indicator ── */
+function getTypists(){
+  if(!R||!R.typing) return [];
+  const now=Date.now();
+  return Object.entries(R.typing)
+    .filter(([name,ts])=>name!==myPseudo&&(now-ts)<4000)
+    .map(([name])=>name);
+}
+
+function startTyping(){
+  if(!myPseudo||!ONLINE) return;
+  sendSilent({['typing/'+myPseudo]:Date.now()});
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(stopTyping, 2500);
+}
+
+function stopTyping(){
+  clearTimeout(typingTimer); typingTimer=null;
+  if(!myPseudo||!ONLINE) return;
+  sendSilent({['typing/'+myPseudo]:null});
+}
+
+function updateTypingIndicator(){
+  const el=document.getElementById('typing-indicator');
+  if(!el) return;
+  const t=getTypists();
+  el.textContent=t.length ? t.join(', ')+(t.length>1?' sont':' est')+' en train d\'écrire…' : '';
+}
+
 /* ── Chat ── */
 function chatLRKey(){ return 'chat_lr_'+(myPseudo||'anon'); }
 function getChatLR(){ return parseInt(localStorage.getItem(chatLRKey())||'0'); }
@@ -378,6 +412,7 @@ function renderChat(){
   if(!chatOpen){ panel.style.display='none'; return; }
 
   const prevInput=document.getElementById('chat-input')?.value||'';
+  const prevFocused=document.activeElement?.id==='chat-input';
   const msgsEl0=document.getElementById('chat-msgs');
   const wasAtBottom=!msgsEl0||(msgsEl0.scrollHeight-msgsEl0.scrollTop-msgsEl0.clientHeight<80);
 
@@ -413,6 +448,7 @@ function renderChat(){
       <button class="modal-close" data-act="closeChat">✕</button>
     </div>
     <div class="chat-msgs" id="chat-msgs">${msgHTML}</div>
+    <div class="typing-indicator" id="typing-indicator"></div>
     <div class="chat-input-row">
       <input type="text" id="chat-input" placeholder="Message…" autocomplete="off">
       <button class="pri sm" data-act="sendChat">Envoyer</button>
@@ -420,7 +456,10 @@ function renderChat(){
 
   const inputEl=document.getElementById('chat-input');
   if(inputEl&&prevInput) inputEl.value=prevInput;
+  if(prevFocused) inputEl?.focus();
   inputEl?.addEventListener('keydown',e=>{if(e.key==='Enter')doSendChat();});
+  inputEl?.addEventListener('input',startTyping);
+  updateTypingIndicator();
 
   const msgsEl=document.getElementById('chat-msgs');
   if(msgsEl&&wasAtBottom) msgsEl.scrollTop=msgsEl.scrollHeight;
@@ -435,6 +474,7 @@ function doSendChat(){
   const mid='m'+uid();
   const ts=Date.now();
   sendSilent({['chat/'+mid]:{by:myPseudo,text,ts}});
+  stopTyping();
   input.value='';
   setChatLR(ts);
   renderChatBtn();
@@ -582,14 +622,12 @@ function render(){
       <ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span style="color:var(--mut)">— ${esc(b.titre)}</span></li>`).join('')}</ul>
     </section>`:''}
 
-    <div class="row noprint">
-      <button data-act="print">Imprimer / PDF</button>
-      ${myPseudo==='Tanguy'?`<button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button>`:''}
-    </div>`;
+    ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`;
 
   if(!myPseudo) showPseudoOverlay();
   renderChatBtn();
   renderChat();
+  updateTypingIndicator();
 }
 
 /* ── Toast ── */
@@ -781,9 +819,8 @@ document.addEventListener('click',e=>{
     renderChatBtn();
   }
   else if(act==='closeChat'){
-    chatOpen=false;
-    renderChat();
-    renderChatBtn();
+    chatOpen=false; stopTyping();
+    renderChat(); renderChatBtn();
   }
   else if(act==='sendChat') doSendChat();
   else if(act==='react')    toggleReaction(el.dataset.mid, el.dataset.ek);
