@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Déroulé de cérémonie</title>
+<style>
+:root{--bg:#faf7f2;--card:#fff;--ink:#2b2622;--mut:#7a6f66;--line:#e6ded3;--acc:#9a5b3c;--ok:#3d7a54;--warn:#c0392b;--todo:#d98e04;--emo:#b5547a;--hum:#e0a21b;--neu:#b8b0a6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px 14px 80px}
+h1{font-size:1.5rem;margin:0 0 2px}
+.sub{color:var(--mut);margin:0 0 14px;font-size:.9rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.panel h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
+label{display:block;font-size:.78rem;color:var(--mut);margin-bottom:3px}
+input,select,textarea,button{font:inherit;color:inherit}
+input[type=text],input[type=time],input[type=number],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff}
+textarea{min-height:64px;resize:vertical}
+button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 11px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;background:#fff}
+.seg button.on{background:var(--acc);color:#fff}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline}
+.sum b{font-size:1.15rem}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.8rem;font-weight:600}
+.pill.ok{background:#e3f1e8;color:var(--ok)}
+.pill.warn{background:#fbe5e2;color:var(--warn)}
+.bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--mut)}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:var(--c)}
+.card{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:14px;padding:11px 12px;margin-bottom:10px}
+.card.todo{border-left-color:var(--todo)}
+.card.drag{opacity:.4}
+.time{min-width:56px;font-variant-numeric:tabular-nums;font-weight:700}
+.time small{display:block;font-weight:400;color:var(--mut)}
+.main{flex:1;min-width:0}
+.main h3{margin:0;font-size:1.02rem}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;font-size:.78rem;color:var(--mut);align-items:center}
+.chip{background:#f1ebe3;border-radius:99px;padding:1px 8px}
+.chip.emotion{background:#f7e0ea;color:#8a2f57}.chip.humour{background:#fbeccc;color:#8a6200}.chip.mixte{background:#efe3f3;color:#6b3a80}
+.chip.todo{background:#fcecc8;color:#8a5a00}.chip.ext{background:#dfeaf5;color:#285a8a}
+.note{margin:6px 0 0;font-size:.86rem;color:var(--mut);white-space:pre-wrap}
+.act{display:flex;flex-direction:column;gap:4px}
+.act button{padding:3px 8px;line-height:1.2}
+.form{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.form .grid{grid-template-columns:1fr 1fr}
+.chk{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--ink)}
+.chk input{width:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+ul.l{margin:0;padding-left:18px}
+ul.l li{margin:2px 0}
+.empty{color:var(--mut);font-style:italic}
+.sync{font-weight:600}.sync.ok{color:var(--ok)}.sync.err{color:var(--warn)}.sync.wait,.sync.demo{color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:99px;font-size:.88rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media print{
+ body{background:#fff}.noprint,.act,.form,.toast{display:none!important}
+ #pn{display:block!important}
+ .panel,.card{break-inside:avoid;border-color:#bbb}main{max-width:none;padding:0}
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div class="toast" id="toast"></div>
+<script>
+/* ===== Configuration Firebase (Realtime Database) =====
+   Colle ici l'URL de ta base, sans slash final. Laisse vide pour le mode démo (rien n'est sauvegardé). */
+const DB_URL  = 'https://deroule-gj-2026-default-rtdb.europe-west1.firebasedatabase.app';
+const DB_PATH = 'deroule-7q4m2x';   // nom du « dossier » dans la base, doit correspondre aux règles
+/* ======================================================= */
+
+const ONLINE = !!DB_URL;
+const endpoint = DB_URL.replace(/\/$/, '') + '/' + DB_PATH + '.json';
+
+const TYPES = {discours:'🎤 Discours', rituel:'🕯️ Rituel', activite:'🎲 Activité', musique:'🎵 Musique', alliances:'💍 Alliances', entree:'🚪 Entrée / sortie', autre:'• Autre'};
+const TONS = {emotion:'Émotion', humour:'Humour', mixte:'Mixte', neutre:'Neutre'};
+const QUI = ['Tanguy','Bastos','Tanguy & Bastos','Témoin','Parent','Mariés','Tous','—'];
+const COLORS = {emotion:'var(--emo)', humour:'var(--hum)', neutre:'var(--neu)'};
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+const B = (id,titre,type,duree,qui,ton,statut,extra={}) => ({id,titre,type,duree,qui,ton,statut,extOnly:false,musique:'',materiel:'',notes:'',...extra});
+
+function defaultDoc(){
+  const list = [
+    B('b01','Entrée des époux','entree',5,'Mariés','emotion','ok',{musique:'À choisir'}),
+    B('b02','Mot d’accueil','discours',4,'Tanguy','mixte','todo',{notes:'Un peu d’émotion + un peu d’humour.'}),
+    B('b03','Leur histoire : « comment on fait ça ? »','discours',9,'Tanguy & Bastos','humour','todo',{notes:'Raconter la vie des mariés et leur rencontre. Alterner les parties. Humour dosé (côté mariée moins potache).'}),
+    B('b04','Prise de parole : témoin du marié','discours',3,'Témoin','mixte','todo'),
+    B('b05','Prise de parole : témoin de la mariée','discours',3,'Témoin','mixte','todo'),
+    B('b06','Prise de parole : parent du marié','discours',3,'Parent','emotion','todo'),
+    B('b07','Prise de parole : parent de la mariée','discours',3,'Parent','emotion','todo'),
+    B('b08','Boîte pour déposer des mots','activite',4,'Tous','emotion','todo',{materiel:'Boîte, cartes, stylos',notes:'Cartes distribuées à l’arrivée, remplies pendant la cérémonie.'}),
+    B('b09','Rituel symbolique (sable, nœud de cordes…)','rituel',7,'Tanguy & Bastos','emotion','todo',{materiel:'À définir selon le rituel'}),
+    B('b10','Activité : quiz des mariés','activite',6,'Bastos','humour','todo',{notes:'3 ou 4 questions croisées, réponses par pancartes ou geste.',materiel:'Pancartes oui/non'}),
+    B('b11','Échange des alliances','alliances',5,'Témoin','emotion','ok',{musique:'À choisir',notes:'Un témoin apporte les alliances.'}),
+    B('b12','Conclusion et sortie','entree',3,'Tanguy','mixte','todo',{musique:'À choisir'}),
+  ];
+  const blocs = {};
+  list.forEach((b,i) => { blocs[b.id] = {...b, pos:i+1}; });
+  return {
+    titre:'Cérémonie laïque', debut:'15:00', cible:60, mode:'ext',
+    notes:'Cravates accordées (officiants / témoins).\nMusiques à choisir : entrée, alliances, sortie.\nCérémonie avant le vin d’honneur.',
+    blocs
+  };
+}
+
+/* ---------- État : R = document distant (source de vérité), S = vue dérivée ---------- */
+let R = null, S = null, editing = null;
+let inflight = 0, chain = Promise.resolve(), deferred = false;
+let status = ONLINE ? 'wait' : 'demo';
+
+const nb = b => Object.assign({titre:'',type:'autre',duree:0,qui:'—',ton:'neutre',statut:'todo',extOnly:false,musique:'',materiel:'',notes:'',pos:0}, b);
+function view(){
+  const d = R || {};
+  return {
+    titre: d.titre ?? 'Cérémonie laïque', debut: d.debut || '15:00', cible: d.cible || 60, mode: d.mode || 'ext', notes: d.notes || '',
+    blocs: Object.values(d.blocs || {}).map(nb).sort((a,b) => a.pos - b.pos)
+  };
+}
+
+const sj = o => JSON.stringify(o, (k,v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((a,k2) => (a[k2] = v[k2], a), {}) : v);
+function setPath(obj, path, val){
+  const ks = path.split('/'); let o = obj;
+  for(let i = 0; i < ks.length - 1; i++){ if(typeof o[ks[i]] !== 'object' || o[ks[i]] === null) o[ks[i]] = {}; o = o[ks[i]]; }
+  if(val === null) delete o[ks[ks.length-1]]; else o[ks[ks.length-1]] = val;
+}
+
+/* ---------- Synchronisation ---------- */
+function send(method, body){
+  if(!ONLINE) return;
+  inflight++;
+  chain = chain
+    .then(() => fetch(endpoint, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}))
+    .then(r => { if(!r.ok) throw new Error(r.status); })
+    .catch(() => { setStatus('err'); toast('Échec de synchronisation'); })
+    .then(() => { inflight--; if(inflight === 0) refresh(); });
+}
+function update(patch){            // modification partielle (champs précis) : fusionnée côté serveur
+  for(const [p,v] of Object.entries(patch)) setPath(R, p, v);
+  send('PATCH', patch);
+  render();
+}
+function replaceAll(doc){          // remplacement complet (import, réinitialisation)
+  R = doc; send('PUT', doc); render();
+}
+function isEditing(){
+  const a = document.activeElement;
+  return !!(a && a.closest && a.closest('#app') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type !== 'checkbox');
+}
+async function refresh(){
+  if(!ONLINE || inflight > 0) return;
+  try{
+    const r = await fetch(endpoint, {cache:'no-store'});
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if(inflight > 0) return;
+    setStatus('ok');
+    if(d === null){ R = defaultDoc(); send('PUT', R); render(); return; }
+    if(R && sj(d) === sj(R)) return;
+    if(R && isEditing()){ deferred = true; return; }
+    R = d; render();
+  }catch(e){ setStatus('err'); }
+}
+function listen(){
+  if(!ONLINE || typeof EventSource === 'undefined') return;
+  const es = new EventSource(endpoint);
+  es.addEventListener('put', refresh); es.addEventListener('patch', refresh);
+  es.onopen = () => setStatus('ok'); es.onerror = () => setStatus('err');
+}
+document.addEventListener('focusout', () => { if(deferred){ deferred = false; setTimeout(refresh, 0); } });
+setInterval(refresh, 15000);
+
+function setStatus(s){
+  status = s;
+  const el = document.getElementById('sync');
+  if(el){ el.className = 'sync ' + s; el.textContent = syncLabel(); }
+}
+const syncLabel = () => ({ok:'● Synchronisé', err:'○ Hors ligne', wait:'○ Connexion…', demo:'◌ Mode démo'}[status]);
+
+/* ---------- Utilitaires ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const hm = m => { m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m/60)) + 'h' + pad(m%60); };
+const toMin = t => { const [h,m] = String(t || '15:00').split(':').map(Number); return (h||0)*60 + (m||0); };
+const visible = () => S.blocs.filter(b => S.mode === 'ext' || !b.extOnly);
+
+function stats(rows){
+  const tons = {emotion:0, humour:0, neutre:0};
+  const qui = {Tanguy:0, Bastos:0};
+  rows.forEach(({b}) => {
+    if(b.ton === 'mixte'){ tons.emotion += b.duree/2; tons.humour += b.duree/2; }
+    else tons[b.ton] += b.duree;
+    if(b.qui === 'Tanguy') qui.Tanguy += b.duree;
+    else if(b.qui === 'Bastos') qui.Bastos += b.duree;
+    else if(b.qui === 'Tanguy & Bastos'){ qui.Tanguy += b.duree/2; qui.Bastos += b.duree/2; }
+  });
+  return {tons, qui};
+}
+
+/* ---------- Rendu ---------- */
+function render(){
+  const app = document.getElementById('app');
+  if(!R){ app.innerHTML = '<p class="sub">Chargement…</p>'; return; }
+  S = view();
+  const vis = visible();
+  let t = toMin(S.debut);
+  const rows = vis.map(b => { const start = t; t += b.duree; return {b, start, end:t}; });
+  const total = t - toMin(S.debut);
+  const diff = total - S.cible;
+  const okDur = Math.abs(diff) <= 5;
+  const {tons, qui} = stats(rows);
+  const tonSum = tons.emotion + tons.humour + tons.neutre || 1;
+  const pct = k => Math.round(tons[k] / tonSum * 100);
+  const todo = vis.filter(b => b.statut === 'todo');
+  const mats = vis.filter(b => b.materiel.trim());
+
+  const opt = (obj, cur) => Object.entries(obj).map(([k,v]) => `<option value="${k}" ${k===cur?'selected':''}>${esc(v)}</option>`).join('');
+  const optA = (arr, cur) => arr.map(v => `<option ${v===cur?'selected':''}>${esc(v)}</option>`).join('');
+  const form = b => `<div class="form noprint">
+      <div class="grid">
+        <div class="full"><label>Titre</label><input type="text" data-f="titre" data-id="${b.id}" value="${esc(b.titre)}"></div>
+        <div><label>Type</label><select data-f="type" data-id="${b.id}">${opt(TYPES,b.type)}</select></div>
+        <div><label>Durée (min)</label><input type="number" min="0" max="120" data-f="duree" data-id="${b.id}" value="${b.duree}"></div>
+        <div><label>Qui</label><select data-f="qui" data-id="${b.id}">${optA(QUI,b.qui)}</select></div>
+        <div><label>Ton</label><select data-f="ton" data-id="${b.id}">${opt(TONS,b.ton)}</select></div>
+        <div><label>Statut</label><select data-f="statut" data-id="${b.id}"><option value="ok" ${b.statut==='ok'?'selected':''}>Validé</option><option value="todo" ${b.statut==='todo'?'selected':''}>À trancher</option></select></div>
+        <div><label>Musique</label><input type="text" data-f="musique" data-id="${b.id}" value="${esc(b.musique)}"></div>
+        <div class="full"><label>Matériel (séparé par des virgules)</label><input type="text" data-f="materiel" data-id="${b.id}" value="${esc(b.materiel)}"></div>
+        <div class="full"><label>Notes / script</label><textarea data-f="notes" data-id="${b.id}">${esc(b.notes)}</textarea></div>
+        <div class="full"><label class="chk"><input type="checkbox" data-f="extOnly" data-id="${b.id}" ${b.extOnly?'checked':''}> Extérieur seulement (retiré en mode intérieur)</label></div>
+      </div></div>`;
+
+  const card = ({b, start, end}, idx) => {
+    const isEd = editing === b.id;
+    return `<article class="card ${b.statut==='todo'?'todo':''}" data-id="${b.id}" ${isEd?'':'draggable="true"'}>
+      <div class="time">${hm(start)}<small>→ ${hm(end)}</small></div>
+      <div class="main">
+        <h3>${esc(TYPES[b.type]||'')} ${esc(b.titre)}</h3>
+        <div class="meta">
+          <span class="chip">${esc(b.qui)}</span>
+          <span class="chip ${b.ton}">${TONS[b.ton]}</span>
+          <span>${b.duree} min</span>
+          ${b.statut==='todo'?'<span class="chip todo">À trancher</span>':''}
+          ${b.extOnly?'<span class="chip ext">Extérieur seulement</span>':''}
+          ${b.musique?`<span>🎵 ${esc(b.musique)}</span>`:''}
+        </div>
+        ${b.notes && !isEd ? `<p class="note">${esc(b.notes)}</p>` : ''}
+        ${isEd ? form(b) : ''}
+      </div>
+      <div class="act noprint">
+        <button data-act="up" data-id="${b.id}" ${idx===0?'disabled':''} aria-label="Monter">↑</button>
+        <button data-act="down" data-id="${b.id}" ${idx===rows.length-1?'disabled':''} aria-label="Descendre">↓</button>
+        <button data-act="edit" data-id="${b.id}" aria-label="Modifier">${isEd?'✓':'✎'}</button>
+        <button data-act="del" data-id="${b.id}" aria-label="Supprimer">🗑</button>
+      </div>
+    </article>`;
+  };
+
+  app.innerHTML = `
+    <h1>${esc(S.titre)}</h1>
+    <p class="sub">Déroulé minuté · partagé en direct · <span id="sync" class="sync ${status}">${syncLabel()}</span></p>
+    ${ONLINE ? '' : '<div class="panel noprint"><h2>Mode démo</h2><p class="note">Aucune base configurée : rien n’est sauvegardé ni partagé. Renseigne <b>DB_URL</b> en haut du fichier.</p></div>'}
+
+    <section class="panel noprint">
+      <h2>Réglages</h2>
+      <div class="grid">
+        <div class="full"><label>Titre</label><input type="text" data-g="titre" value="${esc(S.titre)}"></div>
+        <div><label>Début</label><input type="time" data-g="debut" value="${esc(S.debut)}"></div>
+        <div><label>Durée cible (min)</label><input type="number" min="10" max="240" data-g="cible" value="${S.cible}"></div>
+        <div class="full"><label>Météo</label>
+          <div class="seg"><button data-act="mode" data-m="ext" class="${S.mode==='ext'?'on':''}">☀️ Extérieur</button><button data-act="mode" data-m="int" class="${S.mode==='int'?'on':''}">🏠 Intérieur</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Bilan</h2>
+      <div class="sum">
+        <span>Début <b>${hm(toMin(S.debut))}</b></span>
+        <span>Fin <b>${hm(toMin(S.debut)+total)}</b></span>
+        <span>Total <b>${total} min</b></span>
+        <span class="pill ${okDur?'ok':'warn'}">${diff===0?'Pile dans la cible':(diff>0?'+':'−')+Math.abs(diff)+' min vs cible'}</span>
+      </div>
+      <div class="bar" title="Répartition des tons">
+        <i style="width:${pct('emotion')}%;background:${COLORS.emotion}"></i><i style="width:${pct('humour')}%;background:${COLORS.humour}"></i><i style="width:${pct('neutre')}%;background:${COLORS.neutre}"></i>
+      </div>
+      <div class="legend"><span style="--c:${COLORS.emotion}">Émotion ${pct('emotion')}%</span><span style="--c:${COLORS.humour}">Humour ${pct('humour')}%</span><span style="--c:${COLORS.neutre}">Neutre ${pct('neutre')}%</span></div>
+      <p class="note" style="margin-top:8px">Temps de parole officiants : Tanguy ${Math.round(qui.Tanguy)} min · Bastos ${Math.round(qui.Bastos)} min</p>
+    </section>
+
+    <div id="list">${rows.length ? rows.map(card).join('') : '<p class="empty">Aucun bloc. Ajoute-en un.</p>'}</div>
+    <div class="row noprint"><button class="pri" data-act="add">+ Ajouter un bloc</button></div>
+
+    <section class="panel">
+      <h2>À trancher (${todo.length})</h2>
+      ${todo.length ? `<ul class="l">${todo.map(b=>`<li>${esc(b.titre)}</li>`).join('')}</ul>` : '<p class="empty">Tout est validé.</p>'}
+    </section>
+
+    <section class="panel">
+      <h2>Matériel</h2>
+      ${mats.length ? `<ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span class="note">— ${esc(b.titre)}</span></li>`).join('')}</ul>` : '<p class="empty">Rien de noté.</p>'}
+    </section>
+
+    <section class="panel">
+      <h2>Notes générales</h2>
+      <textarea data-g="notes" class="noprint" style="min-height:90px">${esc(S.notes)}</textarea>
+      <p class="note" style="display:none" id="pn">${esc(S.notes)}</p>
+    </section>
+
+    <div class="row noprint">
+      <button data-act="copy">Copier le texte</button>
+      <button data-act="print">Imprimer / PDF</button>
+      <button data-act="export">Exporter JSON</button>
+      <button data-act="import">Importer JSON</button>
+      <button data-act="reset">Réinitialiser</button>
+      <input type="file" id="file" accept="application/json" hidden>
+    </div>`;
+}
+
+function toast(msg){
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+/* Déplacer un bloc : on ne modifie que sa position (index fractionnaire), donc deux personnes
+   qui éditent des blocs différents ne s'écrasent pas. */
+function move(id, tid, after){
+  const rest = S.blocs.filter(b => b.id !== id);
+  const j = rest.findIndex(x => x.id === tid); if(j < 0) return;
+  const prev = after ? rest[j] : rest[j-1];
+  const next = after ? rest[j+1] : rest[j];
+  const pos = prev && next ? (prev.pos + next.pos) / 2 : prev ? prev.pos + 1 : next.pos - 1;
+  update({['blocs/' + id + '/pos']: pos});
+}
+
+function textOut(){
+  let t = toMin(S.debut);
+  const lines = [S.titre, 'Mode : ' + (S.mode==='ext' ? 'extérieur' : 'intérieur'), ''];
+  visible().forEach(b => {
+    lines.push(`${hm(t)}–${hm(t+b.duree)}  ${b.titre} (${b.qui}, ${b.duree} min)` + (b.statut==='todo' ? '  [à trancher]' : ''));
+    if(b.musique) lines.push('   Musique : ' + b.musique);
+    if(b.notes) lines.push('   ' + b.notes.replace(/\n/g, '\n   '));
+    t += b.duree;
+  });
+  if(S.notes.trim()) lines.push('', 'Notes :', S.notes);
+  return lines.join('\n');
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if(!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  const vis = visible(), k = vis.findIndex(b => b.id === id);
+  if(act === 'up' && k > 0) move(id, vis[k-1].id, false);
+  else if(act === 'down' && k >= 0 && k < vis.length-1) move(id, vis[k+1].id, true);
+  else if(act === 'edit'){ editing = editing === id ? null : id; render(); }
+  else if(act === 'del'){ if(confirm('Supprimer ce bloc ?')){ if(editing === id) editing = null; update({['blocs/' + id]: null}); } }
+  else if(act === 'add'){
+    const nid = 'b' + uid();
+    const pos = S.blocs.reduce((m,b) => Math.max(m, b.pos), 0) + 1;
+    editing = nid;
+    update({['blocs/' + nid]: {...B(nid,'Nouveau bloc','autre',5,'—','neutre','todo'), pos}});
+  }
+  else if(act === 'mode') update({mode: el.dataset.m});
+  else if(act === 'print') window.print();
+  else if(act === 'copy'){ (navigator.clipboard ? navigator.clipboard.writeText(textOut()) : Promise.reject()).then(() => toast('Texte copié'), () => toast('Copie impossible')); }
+  else if(act === 'export'){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(R, null, 2)], {type:'application/json'}));
+    a.download = 'deroule.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  else if(act === 'import') document.getElementById('file').click();
+  else if(act === 'reset'){ if(confirm('Tout remettre à zéro pour tout le monde ?')){ editing = null; replaceAll(defaultDoc()); } }
+});
+
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.id === 'file'){
+    const f = el.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { try{ const d = JSON.parse(r.result); if(!d || typeof d.blocs !== 'object') throw 0; replaceAll(d); toast('Importé'); }catch(_){ toast('Fichier invalide'); } };
+    r.readAsText(f); return;
+  }
+  if(el.dataset.g){
+    const k = el.dataset.g;
+    update({[k]: k === 'cible' ? (parseInt(el.value) || 60) : el.value}); return;
+  }
+  if(el.dataset.f){
+    const k = el.dataset.f;
+    const v = el.type === 'checkbox' ? el.checked : (k === 'duree' ? Math.max(0, parseInt(el.value) || 0) : el.value);
+    update({['blocs/' + el.dataset.id + '/' + k]: v});
+  }
+});
+
+let dragId = null;
+document.addEventListener('dragstart', e => {
+  const c = e.target.closest && e.target.closest('.card'); if(!c) return;
+  dragId = c.dataset.id; c.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId);
+});
+document.addEventListener('dragover', e => { if(dragId && e.target.closest('.card')) e.preventDefault(); });
+document.addEventListener('drop', e => {
+  const c = e.target.closest('.card'); if(!dragId || !c) return;
+  e.preventDefault();
+  const id = dragId; dragId = null;
+  if(c.dataset.id !== id){ const r = c.getBoundingClientRect(); move(id, c.dataset.id, e.clientY > r.top + r.height/2); }
+  else render();
+});
+document.addEventListener('dragend', () => { dragId = null; render(); });
+
+(async function init(){
+  if(!ONLINE){ R = defaultDoc(); render(); return; }
+  render();
+  await refresh();
+  listen();
+})();
+</script>
+</body>
+</html>
