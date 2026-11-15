@@ -402,6 +402,7 @@ function chatUnread(){
 function renderChatBtn(){
   const btn=document.getElementById('chat-btn');
   if(!btn) return;
+  btn.style.display=chatOpen?'none':'flex';
   const n=chatUnread();
   btn.innerHTML='💬'+(n>0?`<span class="chat-badge">${n}</span>`:'');
 }
