@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <title>Déroulé cérémonie</title>
+<script>(function(){const t=localStorage.getItem('ceremonie_theme');if(t&&t!=='light')document.documentElement.classList.add(t);})();</script>
 </head>
 <body>
 <main id="app"></main>
@@ -65,6 +66,31 @@ let menuOpen   = false;
 const scriptOpen = new Set();
 const notesOpen  = new Set();
 let jourJMode = false, jourJIndex = 0, jourJTimer = null, jourJBlockStartTs = null;
+let theme = localStorage.getItem('ceremonie_theme')||'light';
+function applyTheme(){ document.documentElement.className = theme==='light'?'':theme; }
+function setTheme(t){ const prev=theme; theme=t; localStorage.setItem('ceremonie_theme',t); applyTheme(); render(); if(t==='clownard'&&prev!=='clownard') clownardSplash(); }
+function clownardSplash(){
+  const PIECES=['🤡','🎉','🎊','🎈','✨','🌈','💥','🎭','🎪','🃏'];
+  const overlay=document.createElement('div'); overlay.id='clownard-splash';
+  overlay.innerHTML=`<div class="splash-msg">🤡 Bienvenue dans le<br>mode clownard<br> énorme clownard ! 🤡</div><div class="splash-hint">Clique pour continuer</div>`;
+  document.body.appendChild(overlay);
+  // confettis
+  for(let i=0;i<60;i++){
+    const p=document.createElement('span'); p.className='confetti-piece';
+    p.textContent=PIECES[Math.floor(Math.random()*PIECES.length)];
+    p.style.left=Math.random()*100+'vw';
+    p.style.fontSize=(1.2+Math.random()*2)+'rem';
+    const dur=1.5+Math.random()*2.5;
+    p.style.animationDuration=dur+'s';
+    p.style.animationDelay=(Math.random()*1.2)+'s';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), (dur+1.5)*1000);
+  }
+  const dismiss=()=>{ overlay.style.transition='opacity .25s'; overlay.style.opacity='0'; setTimeout(()=>overlay.remove(),280); };
+  overlay.addEventListener('click', dismiss);
+  setTimeout(dismiss, 4000);
+}
+applyTheme();
 const SCRIPT_SPEAKER_COLORS = [
   ['#d7eaf5','#1b3d6a'],
   ['#fde8dc','#7a3209'],
@@ -785,7 +811,7 @@ function render(){
     <div class="sticky-hd">
       <div class="hd">
         <div class="hd-left">
-          <img src="gigi.webp" alt="" class="logo">
+          <img src="${theme==='clownard'?'gigi-clown.webp':'gigi.webp'}" alt="" class="logo">
           <h1>Déroulé cérémonie</h1>
         </div>
         <div class="hd-right">
@@ -795,6 +821,7 @@ function render(){
             <button class="${jourJMode?'active-mode':''}" data-act="toggleJourJ" title="Mode Répétition">▶ Répét.</button>
           </div>
           <button class="pseudo-chip noprint hd-desktop" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
+          <button class="icon-btn noprint hd-desktop" data-act="toggleTheme" title="${theme==='light'?'Mode sombre':theme==='dark'?'Mode clownard':'Mode clair'}">${theme==='light'?'🌙':theme==='dark'?'🤡':'☀️'}</button>
           <button class="icon-btn noprint hd-desktop" data-act="openSettings" title="Paramètres">⚙</button>
           <button class="icon-btn noprint hd-mobile-btn" data-act="openMenu" title="Menu" style="font-size:1.3rem;min-height:36px">≡</button>
         </div>
@@ -890,6 +917,7 @@ function renderMobileMenu(){
       ${!scriptMode&&!jourJMode?`<button class="menu-item" data-act="openAdd">➕ Ajouter un bloc</button>`:''}
       <button class="menu-item${scriptMode?' script-active':''}" data-act="toggleScriptMode">📜 Mode script${scriptMode?' (actif)':''}</button>
       <button class="menu-item${jourJMode?' script-active':''}" data-act="toggleJourJ">▶ Mode Répétition${jourJMode?' (actif)':''}</button>
+      <button class="menu-item" data-act="toggleTheme">${theme==='light'?'🌙 Mode sombre':theme==='dark'?'🤡 Mode clownard':'☀️ Mode clair'}</button>
       <button class="menu-item" data-act="openSettings">⚙ Paramètres</button>
     </div>`;
 }
@@ -1115,6 +1143,9 @@ document.addEventListener('click',e=>{
     if(jourJIndex>0){jourJIndex--;jourJBlockStartTs=Date.now();}
     render();
   }
+  else if(act==='toggleTheme'){
+    setTheme(theme==='light'?'dark':theme==='dark'?'clownard':'light');
+  }
   else if(act==='resetChecklist'){
     if(confirm('Tout décocher ?')){
       const patch={};
@@ -1304,6 +1335,19 @@ document.addEventListener('drop',e=>{
 });
 
 document.addEventListener('dragend',()=>{ dragId=null; removeDropLine(); render(); });
+
+/* ── Konami → Mode Clownard ── */
+const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let konamiIdx=0;
+document.addEventListener('keydown',e=>{
+  if(e.key===KONAMI[konamiIdx]){
+    konamiIdx++;
+    if(konamiIdx===KONAMI.length){
+      konamiIdx=0;
+      setTheme('clownard');
+    }
+  } else { konamiIdx=e.key===KONAMI[0]?1:0; }
+});
 
 window.addEventListener('scroll',()=>{
   document.querySelector('.sticky-hd')?.classList.toggle('scrolled',window.scrollY>20);

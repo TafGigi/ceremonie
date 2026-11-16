@@ -22,6 +22,117 @@
   --sh2: 0 6px 20px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.07);
 }
 
+/* ── Dark mode ── */
+.dark {
+  --bg:   #18171b;
+  --card: #232128;
+  --ink:  #ede8f2;
+  --mut:  #9a8fa8;
+  --line: #3a3540;
+  --acc:  #e06030;
+  --ok:   #3aaa66;
+  --warn: #e04545;
+  --c-deroule:  #3aaa66;
+  --c-valide:   #4a80d0;
+  --c-trancher: #c06825;
+  --sh:  0 2px 10px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.25);
+  --sh2: 0 6px 20px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3);
+}
+.dark input[type=text], .dark input[type=number],
+.dark input[type=password], .dark select, .dark textarea { background: #2c2a32; color: var(--ink); }
+.dark .panel-bilan { background: linear-gradient(120deg, var(--card) 55%, #1c2d22 100%); }
+.dark .chip { background: #3a3540; }
+.dark .chip.by { background: #1e2d4a; color: #8ab0e0; }
+.dark .lock-badge { background: #3a1a18; border-color: #7a2a22; color: #f08080; }
+.dark .msg-bubble { background: #2c2a32; }
+.dark .modal { background: #232128; }
+.dark .menu-sheet { background: #232128; }
+.dark .pseudo-overlay .modal, .dark #settings-overlay .modal { background: #232128; }
+.dark .jj-script { background: #2c2a32; }
+.dark .add-details > summary { border-top-color: var(--line); }
+
+/* ── Mode Clownard 🤡 ── */
+.clownard {
+  --bg:   #fffde7;
+  --card: #ffffff;
+  --ink:  #1a0050;
+  --mut:  #c06000;
+  --line: #ffb300;
+  --acc:  #e91e8c;
+  --ok:   #00c853;
+  --warn: #f44336;
+  --c-deroule:  #00b894;
+  --c-valide:   #6c5ce7;
+  --c-trancher: #fd79a8;
+  --radius: 18px;
+  --sh:  0 4px 20px rgba(233,30,140,.18);
+  --sh2: 0 8px 32px rgba(233,30,140,.25);
+}
+.clownard h1 {
+  background: linear-gradient(90deg,#e91e8c,#ff9800,#00c853,#6c5ce7,#e91e8c);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbowMove 3s linear infinite;
+}
+@keyframes rainbowMove { to { background-position: 200%; } }
+.clownard .card { border-left-width: 5px; }
+.clownard .card:hover:not(.drag) { transform: rotate(.5deg) scale(1.01); }
+.clownard button.pri {
+  background: linear-gradient(135deg,#e91e8c,#ff9800) !important;
+  border-color: transparent !important;
+  animation: clownPulse 2s ease infinite;
+}
+@keyframes clownPulse { 0%,100%{box-shadow:0 0 0 0 rgba(233,30,140,.4)} 50%{box-shadow:0 0 0 8px rgba(233,30,140,0)} }
+.clownard .col[data-col=deroule]    .col-hd { background: linear-gradient(135deg,#00b894,#00cec9); }
+.clownard .col[data-col=valide]     .col-hd { background: linear-gradient(135deg,#6c5ce7,#a29bfe); }
+.clownard .col[data-col=a_trancher] .col-hd { background: linear-gradient(135deg,#fd79a8,#e17055); }
+.clownard .panel-bilan { background: linear-gradient(120deg,#fff9f0,#f0fff4); border-left-color: #e91e8c; }
+.clownard .bilan-end { color: #e91e8c; }
+.clownard .bloc-time-badge { color: #e91e8c; }
+.clownard .sticky-hd.scrolled { box-shadow: 0 2px 12px rgba(233,30,140,.2); }
+
+/* ── Splash Clownard ── */
+#clownard-splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  animation: splashIn .3s ease;
+  cursor: pointer;
+}
+@keyframes splashIn { from { opacity:0; transform:scale(.92) } to { opacity:1; transform:scale(1) } }
+#clownard-splash .splash-msg {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg,#e91e8c,#ff9800,#6c5ce7);
+  border-radius: 24px;
+  box-shadow: 0 8px 48px rgba(233,30,140,.5);
+  animation: splashBounce .6s cubic-bezier(.36,.07,.19,.97) both;
+  max-width: 90vw;
+  line-height: 1.4;
+}
+@keyframes splashBounce {
+  0%  { transform: scale(.4) rotate(-8deg); opacity:0 }
+  60% { transform: scale(1.08) rotate(2deg) }
+  80% { transform: scale(.96) }
+  100%{ transform: scale(1) rotate(0); opacity:1 }
+}
+#clownard-splash .splash-hint {
+  margin-top: 1.2rem; color: rgba(255,255,255,.7); font-size: .9rem;
+}
+.confetti-piece {
+  position: fixed; top: -60px; font-size: 2rem; pointer-events: none; z-index: 10000;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
 /* ── Reset & base ── */
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
