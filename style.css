@@ -817,15 +817,64 @@ ul.l li { margin: 3px 0; font-size: .88rem; }
 .chat-input-row input { flex: 1; }
 .chat-input-row button { flex-shrink: 0; }
 
+/* ── Voir plus / voir moins ── */
+.card-note.truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.voir-plus-btn {
+  font-size: .73rem; color: var(--acc);
+  background: none; border: none; padding: 0;
+  min-height: unset; cursor: pointer; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
 /* ── Script par bloc ── */
-.script-toggle-row { margin-top: 7px; }
+.script-toggle-row { margin-top: 0; }
 .script-tog {
-  color: var(--mut); font-size: .78rem;
-  padding: 3px 9px !important; min-height: 26px !important;
+  font-size: .78rem;
+  padding: 3px 10px !important; min-height: 26px !important;
   border-radius: 7px !important;
+}
+.script-tog.no-script {
+  border-style: dashed !important;
+  color: var(--mut);
+  background: transparent;
+}
+.script-tog.has-script {
+  color: var(--ink);
+  background: var(--bg);
+  border-color: var(--line) !important;
 }
 .script-tog:hover { border-color: var(--acc) !important; color: var(--acc); }
 .script-tog.open { color: var(--acc); border-color: var(--acc) !important; background: rgba(201,76,28,.06) !important; }
+.script-lines {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--acc); color: #fff;
+  border-radius: 99px; font-size: .6rem; font-weight: 800;
+  padding: 0 5px; min-width: 15px; height: 14px;
+  vertical-align: middle; margin-left: 3px;
+}
+
+/* ── Formulaire d'ajout ── */
+.modal-add { max-width: 460px; }
+.add-form-main { display: flex; flex-direction: column; gap: 12px; }
+.add-row-2 { display: grid; grid-template-columns: 1fr 90px; gap: 9px; }
+.add-details { margin-top: 6px; }
+.add-details > summary {
+  font-size: .78rem; color: var(--mut); font-weight: 600;
+  cursor: pointer; padding: 8px 0 6px;
+  border-top: 1px dashed var(--line);
+  list-style: none; display: flex; align-items: center; gap: 6px;
+  user-select: none;
+}
+.add-details > summary::-webkit-details-marker { display: none; }
+.add-details > summary::before { content: '▸'; font-size: .62rem; transition: transform .15s; display: inline-block; }
+.add-details[open] > summary::before { transform: rotate(90deg); }
+.add-details[open] > summary { color: var(--acc); }
+.add-form-extra { display: flex; flex-direction: column; gap: 9px; padding-top: 10px; }
 
 .script-panel {
   margin-top: 10px; padding-top: 10px;

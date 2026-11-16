@@ -63,6 +63,7 @@ let typingTimer = null;
 let scriptMode = false;
 let menuOpen   = false;
 const scriptOpen = new Set();
+const notesOpen  = new Set();
 let jourJMode = false, jourJIndex = 0, jourJTimer = null, jourJBlockStartTs = null;
 const SCRIPT_SPEAKER_COLORS = [
   ['#d7eaf5','#1b3d6a'],
@@ -329,23 +330,30 @@ function showAddOverlay(defaultCol){
   if(!S) return;
   const col = defaultCol || 'a_trancher';
   const ov  = document.getElementById('add-overlay');
-  ov.innerHTML=`<div class="modal">
+  ov.innerHTML=`<div class="modal modal-add">
     <div class="modal-hd">
       <h2>Nouveau bloc</h2>
       <button class="modal-close" data-act="closeAdd">✕</button>
     </div>
-    <div class="grid">
-      <div class="full"><label>Titre *</label><input type="text" id="af-titre" placeholder="Nom du bloc…" autocomplete="off"></div>
-      <div><label>Type</label><select id="af-type">${optHTML(S.types,'autre')}</select></div>
-      <div><label>Durée (min)</label><input type="number" min="0" max="120" id="af-duree" value="5"></div>
-      <div class="full"><label>Qui</label><div class="qui-checks">${
+    <div class="add-form-main">
+      <div><label>Titre *</label><input type="text" id="af-titre" placeholder="Nom du bloc…" autocomplete="off"></div>
+      <div class="add-row-2">
+        <div><label>Type</label><select id="af-type">${optHTML(S.types,'autre')}</select></div>
+        <div><label>Durée (min)</label><input type="number" min="0" max="120" id="af-duree" value="5"></div>
+      </div>
+      <div><label>Qui</label><div class="qui-checks">${
         S.quiArr.map(name=>`<label><input type="checkbox" class="af-qui" value="${esc(name)}"> ${esc(name)}</label>`).join('')
       }</div></div>
-      <div class="full"><label>Colonne</label><select id="af-col">${optHTML(COLS,col)}</select></div>
-      <div class="full"><label>Musique</label><input type="text" id="af-musique" autocomplete="off"></div>
-      <div class="full"><label>Matériel</label><input type="text" id="af-materiel" autocomplete="off"></div>
-      <div class="full"><label>Notes / script</label><textarea id="af-notes"></textarea></div>
+      <div><label>Colonne</label><select id="af-col">${optHTML(COLS,col)}</select></div>
     </div>
+    <details class="add-details">
+      <summary>Détails optionnels</summary>
+      <div class="add-form-extra">
+        <div><label>Musique</label><input type="text" id="af-musique" autocomplete="off"></div>
+        <div><label>Matériel</label><input type="text" id="af-materiel" autocomplete="off"></div>
+        <div><label>Notes</label><textarea id="af-notes" style="min-height:60px"></textarea></div>
+      </div>
+    </details>
     <div class="modal-actions">
       <button class="pri" data-act="confirmAdd">Créer →</button>
       <button data-act="closeAdd">Annuler</button>
@@ -712,6 +720,10 @@ function render(){
       const typeInfo = S.types[b.type]||{emoji:'•'};
       const blockStart = colKey==='deroule' ? timeAt(startHHMM, runMin) : null;
       runMin += b.duree||0;
+      const noteIsLong = b.notes && (b.notes.length > 100 || b.notes.split('\n').length > 2);
+      const noteExpanded = notesOpen.has(b.id);
+      const scriptLines = b.script ? b.script.split('\n').filter(l=>l.trim()).length : 0;
+      const isScriptOpen = scriptOpen.has(b.id);
 
       const v=blockVotes(b.id);
       const upVoters=Object.keys(v.up), downVoters=Object.keys(v.down);
@@ -730,14 +742,14 @@ function render(){
             ${b.musique?`<span>🎵 ${esc(b.musique)}</span>`:''}
             ${b.createdBy?`<span class="chip by">✍ ${esc(b.createdBy)}</span>`:''}
           </div>
-          ${b.notes&&!isEd?`<p class="card-note">${esc(b.notes)}</p>`:''}
+          ${b.notes&&!isEd?`<p class="card-note${noteIsLong&&!noteExpanded?' truncated':''}">${esc(b.notes)}</p>${noteIsLong?`<button class="voir-plus-btn noprint" data-act="toggleNote" data-id="${b.id}">${noteExpanded?'Voir moins ↑':'Voir plus ↓'}</button>`:''}`:''}
           ${!isEd?`<div class="card-votes noprint">
             <button class="vote-btn${myUp?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="up">👍${upCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="up">${upCount}</span>`:''}</button>
             <button class="vote-btn${myDown?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="down">👎${downCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="down">${downCount}</span>`:''}</button>
           </div>`:''}
           ${isEd?form(b):''}
-          <div class="script-toggle-row noprint"><button class="sm ghost script-tog${scriptOpen.has(b.id)?' open':''}" data-act="toggleScript" data-id="${b.id}">📝 Script${b.script?' ·':''}</button></div>
-          ${scriptOpen.has(b.id)?`<div class="script-panel">
+          <div class="script-toggle-row noprint"><button class="sm script-tog${isScriptOpen?' open':''}${b.script?' has-script':' no-script'}" data-act="toggleScript" data-id="${b.id}">${isScriptOpen?'✕ Fermer le script':b.script?`📝 Script <span class="script-lines">${scriptLines}</span>`:'✎ Rédiger le script'}</button></div>
+          ${isScriptOpen?`<div class="script-panel">
             <div class="script-toolbar noprint">
               <span class="script-toolbar-label">Intervenant&nbsp;:</span>
               ${S.quiArr.map((name,qi)=>{const[sbg,sfg]=SCRIPT_SPEAKER_COLORS[qi%SCRIPT_SPEAKER_COLORS.length];return`<button class="se-sp-btn" data-act="insertSpeaker" data-id="${b.id}" data-who="${esc(name)}" style="background:${sbg};color:${sfg};border-color:${sfg}50">${esc(name)}</button>`;}).join('')}
@@ -1075,6 +1087,10 @@ document.addEventListener('click',e=>{
   }
   else if(act==='toggleScript'){
     if(scriptOpen.has(id)) scriptOpen.delete(id); else scriptOpen.add(id);
+    render();
+  }
+  else if(act==='toggleNote'){
+    if(notesOpen.has(id)) notesOpen.delete(id); else notesOpen.add(id);
     render();
   }
   else if(act==='toggleScriptMode'){
