@@ -1328,7 +1328,7 @@ document.addEventListener('change',e=>{
 });
 
 /* ── Drag & Drop ── */
-let dragId=null;
+let dragId=null, dragStartX=0, dragStartY=0, dragMoved=false;
 
 function placeDropLine(refEl, before){
   document.getElementById('drop-line')?.remove();
@@ -1348,7 +1348,8 @@ function doDragScroll(){
 document.addEventListener('dragstart',e=>{
   const c=e.target.closest('.card'); if(!c) return;
   if(e.target.closest('textarea,input,select')) return;
-  dragId=c.dataset.id; c.classList.add('drag');
+  dragId=c.dataset.id; dragStartX=e.clientX; dragStartY=e.clientY; dragMoved=false;
+  c.classList.add('drag');
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain',dragId);
 });
@@ -1357,6 +1358,7 @@ document.addEventListener('dragover',e=>{
   if(!dragId) return;
   const zone=90, newDir=e.clientY<zone?-1:e.clientY>window.innerHeight-zone?1:0;
   if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
+  if(Math.abs(e.clientX-dragStartX)>8||Math.abs(e.clientY-dragStartY)>8) dragMoved=true;
   const col=e.target.closest('.col'); if(!col) return;
   e.preventDefault();
 
@@ -1386,8 +1388,9 @@ document.addEventListener('dragleave',e=>{
 });
 
 document.addEventListener('drop',e=>{
-  const col=e.target.closest('.col'); if(!dragId||!col) return;
+  const col=e.target.closest('.col'); if(!dragId||!col||!dragMoved) return;
   e.preventDefault();
+  const dropLineEl=document.getElementById('drop-line');
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   removeDropLine();
   const id=dragId; dragId=null;
@@ -1396,19 +1399,26 @@ document.addEventListener('drop',e=>{
   if(card&&card.dataset.id!==id){
     const r=card.getBoundingClientRect();
     moveToCol(id,newColonne,card.dataset.id,e.clientY>r.top+r.height/2);
-  }else{
-    moveToCol(id,newColonne,null,true);
+  } else if(dropLineEl&&col.contains(dropLineEl)){
+    const prev=dropLineEl.previousElementSibling;
+    const next=dropLineEl.nextElementSibling;
+    if(prev?.dataset?.id&&prev.dataset.id!==id) moveToCol(id,newColonne,prev.dataset.id,true);
+    else if(next?.dataset?.id&&next.dataset.id!==id) moveToCol(id,newColonne,next.dataset.id,false);
+    else moveToCol(id,newColonne,null,true);
   }
+  // pas de drop-line = pas de cible valide → rien
 });
 
-document.addEventListener('dragend',()=>{ dragId=null; dragScrollDir=0; dragScrollRaf=null; removeDropLine(); render(); });
+document.addEventListener('dragend',()=>{ dragId=null; dragMoved=false; dragScrollDir=0; dragScrollRaf=null; removeDropLine(); render(); });
 
 /* ── Touch Drag & Drop ── */
 let touchDragId=null, touchClone=null, touchDragActive=false, touchLongPressTimer=null;
 let touchStartX=0, touchStartY=0, touchOffsetX=0, touchOffsetY=0;
+let touchPendingColTarget=null;
 
 function touchCleanup(){
   dragScrollDir=0; dragScrollRaf=null;
+  touchPendingColTarget=null;
   removeColZoneOverlay();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   removeDropLine();
@@ -1476,15 +1486,21 @@ document.addEventListener('touchmove',e=>{
   const t=e.touches[0];
   touchClone.style.left=(t.clientX-touchOffsetX)+'px';
   touchClone.style.top=(t.clientY-touchOffsetY)+'px';
-  // vertical auto-scroll
-  const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
-  if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
+  // vertical auto-scroll (seulement si mouvement majoritairement vertical)
+  const dxTotal=Math.abs(t.clientX-touchStartX), dyTotal=Math.abs(t.clientY-touchStartY);
+  if(dxTotal<dyTotal*1.5){
+    const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
+    if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
+  } else {
+    dragScrollDir=0;
+  }
   // inter-column zone overlay
   const b=S?.blocs.find(b=>b.id===touchDragId);
   const hZone=getTouchColZone(t.clientX);
   const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
+  touchPendingColTarget=colTarget;
   showColZoneOverlay(hZone,colTarget);
-  if(hZone){ removeDropLine(); return; }
+  if(hZone){ dragScrollDir=0; dragScrollRaf=null; removeDropLine(); return; }
   // intra-column drop line
   touchClone.style.pointerEvents='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
@@ -1508,13 +1524,11 @@ document.addEventListener('touchend',e=>{
   if(!touchDragActive) return;
   const t=e.changedTouches[0];
   removeColZoneOverlay();
-  // check inter-column zone
-  const b=S?.blocs.find(b=>b.id===touchDragId);
-  const hZone=getTouchColZone(t.clientX);
-  const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
-  if(colTarget&&touchDragId){
-    moveToCol(touchDragId,colTarget,null,true);
-    touchCleanup(); return;
+  if(Math.abs(t.clientX-touchStartX)<15&&Math.abs(t.clientY-touchStartY)<15){touchCleanup();return;}
+  // check inter-column zone (use last known target from touchmove)
+  if(touchPendingColTarget&&touchDragId){
+    moveToCol(touchDragId,touchPendingColTarget,null,true);
+    touchPendingColTarget=null; touchCleanup(); return;
   }
   // normal intra-column drop
   if(touchClone) touchClone.style.display='none';
