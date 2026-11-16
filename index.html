@@ -1340,7 +1340,7 @@ function removeDropLine(){ document.getElementById('drop-line')?.remove(); }
 
 let dragScrollDir=0, dragScrollRaf=null;
 function doDragScroll(){
-  if((!dragId&&!touchDragActive)||dragScrollDir===0){dragScrollRaf=null;return;}
+  if(!dragId||dragScrollDir===0){dragScrollRaf=null;return;}
   window.scrollBy(0,dragScrollDir*10);
   dragScrollRaf=requestAnimationFrame(doDragScroll);
 }
@@ -1451,7 +1451,7 @@ document.addEventListener('touchstart',e=>{
 },{passive:true});
 
 function getTouchColZone(clientX){
-  const w=window.innerWidth, edge=w*0.18;
+  const w=window.innerWidth, edge=w*0.25;
   if(clientX<edge) return 'left';
   if(clientX>w-edge) return 'right';
   return null;
@@ -1486,21 +1486,13 @@ document.addEventListener('touchmove',e=>{
   const t=e.touches[0];
   touchClone.style.left=(t.clientX-touchOffsetX)+'px';
   touchClone.style.top=(t.clientY-touchOffsetY)+'px';
-  // vertical auto-scroll (seulement si mouvement majoritairement vertical)
-  const dxTotal=Math.abs(t.clientX-touchStartX), dyTotal=Math.abs(t.clientY-touchStartY);
-  if(dxTotal<dyTotal*1.5){
-    const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
-    if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
-  } else {
-    dragScrollDir=0;
-  }
   // inter-column zone overlay
   const b=S?.blocs.find(b=>b.id===touchDragId);
   const hZone=getTouchColZone(t.clientX);
   const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
   touchPendingColTarget=colTarget;
   showColZoneOverlay(hZone,colTarget);
-  if(hZone){ dragScrollDir=0; dragScrollRaf=null; removeDropLine(); return; }
+  if(hZone){ removeDropLine(); return; }
   // intra-column drop line
   touchClone.style.pointerEvents='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
