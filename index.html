@@ -69,6 +69,7 @@ const scriptOpen = new Set();
 const notesOpen  = new Set();
 let jourJMode = false, jourJIndex = 0, jourJTimer = null, jourJBlockStartTs = null;
 let jourJPaused = false, jourJPausedElapsed = 0, jourJTotalElapsed = 0;
+let pendingScrollToCol = null, pendingScrollToCard = null;
 let theme = localStorage.getItem('ceremonie_theme')||'light';
 function applyTheme(){ document.documentElement.className = theme==='light'?'':theme; }
 function setTheme(t){ const prev=theme; theme=t; localStorage.setItem('ceremonie_theme',t); applyTheme(); render(); if(t==='clownard'&&prev!=='clownard') clownardSplash(); }
@@ -715,6 +716,8 @@ function renderJourJ(){
 function render(){
   const app=document.getElementById('app');
   if(!R){app.innerHTML='<p style="padding:20px;color:#6a5f52">Chargement…</p>';return;}
+  const _prevCols=document.querySelector('.columns');
+  const _savedScroll=_prevCols?_prevCols.scrollLeft:0;
   S=view();
 
   const deroule   = blocsParCol('deroule');
@@ -897,6 +900,24 @@ function render(){
   renderMobileMenu();
   updateTypingIndicator();
   if(jourJMode){ startJourJTimer(); updateJourJTimer(); }
+  const _newCols=document.querySelector('.columns');
+  if(_newCols){
+    if(pendingScrollToCol!==null){
+      const _t=_newCols.querySelector(`[data-col="${pendingScrollToCol}"]`);
+      if(_t) _newCols.scrollLeft=_t.offsetLeft;
+      pendingScrollToCol=null;
+    } else {
+      _newCols.scrollLeft=_savedScroll;
+    }
+  }
+  if(pendingScrollToCard && window.innerWidth>780){
+    const _cid=pendingScrollToCard;
+    requestAnimationFrame(()=>{
+      const _cardEl=document.querySelector(`.card[data-id="${_cid}"]`);
+      if(_cardEl) _cardEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  }
+  pendingScrollToCard=null;
   initColDots();
 }
 
@@ -1060,14 +1081,18 @@ document.addEventListener('click',e=>{
   if(act==='up'||act==='down'){
     const b=S.blocs.find(x=>x.id===id); if(!b) return;
     const col=blocsParCol(b.colonne), k=col.findIndex(x=>x.id===id);
-    if(act==='up'&&k>0)              moveToCol(id,b.colonne,col[k-1].id,false);
-    if(act==='down'&&k<col.length-1) moveToCol(id,b.colonne,col[k+1].id,true);
+    if(act==='up'&&k>0)              { pendingScrollToCard=id; moveToCol(id,b.colonne,col[k-1].id,false); }
+    if(act==='down'&&k<col.length-1) { pendingScrollToCard=id; moveToCol(id,b.colonne,col[k+1].id,true); }
   }
   else if(act==='colLeft'||act==='colRight'){
     const b=S.blocs.find(x=>x.id===id); if(!b) return;
     const idx=COL_ORDER.indexOf(b.colonne);
     const newIdx=act==='colLeft'?idx-1:idx+1;
-    if(newIdx>=0&&newIdx<COL_ORDER.length) moveToCol(id,COL_ORDER[newIdx],null,true);
+    if(newIdx>=0&&newIdx<COL_ORDER.length){
+      pendingScrollToCol=COL_ORDER[newIdx];
+      pendingScrollToCard=id;
+      moveToCol(id,COL_ORDER[newIdx],null,true);
+    }
   }
   else if(act==='edit'){
     const lock=lockInfo(id);
@@ -1313,6 +1338,13 @@ function placeDropLine(refEl, before){
 }
 function removeDropLine(){ document.getElementById('drop-line')?.remove(); }
 
+let dragScrollDir=0, dragScrollRaf=null;
+function doDragScroll(){
+  if(!dragId||dragScrollDir===0){dragScrollRaf=null;return;}
+  window.scrollBy(0,dragScrollDir*10);
+  dragScrollRaf=requestAnimationFrame(doDragScroll);
+}
+
 document.addEventListener('dragstart',e=>{
   const c=e.target.closest('.card'); if(!c) return;
   if(e.target.closest('textarea,input,select')) return;
@@ -1323,8 +1355,11 @@ document.addEventListener('dragstart',e=>{
 
 document.addEventListener('dragover',e=>{
   if(!dragId) return;
+  const zone=90, newDir=e.clientY<zone?-1:e.clientY>window.innerHeight-zone?1:0;
+  if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
   const col=e.target.closest('.col'); if(!col) return;
   e.preventDefault();
+
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   col.classList.add('drag-over');
 
@@ -1366,7 +1401,7 @@ document.addEventListener('drop',e=>{
   }
 });
 
-document.addEventListener('dragend',()=>{ dragId=null; removeDropLine(); render(); });
+document.addEventListener('dragend',()=>{ dragId=null; dragScrollDir=0; dragScrollRaf=null; removeDropLine(); render(); });
 
 /* ── Konami → Mode Clownard ── */
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
