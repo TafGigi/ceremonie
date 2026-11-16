@@ -60,6 +60,7 @@ let typingTimer = null;
 let scriptMode = false;
 let menuOpen   = false;
 const scriptOpen = new Set();
+let jourJMode = false, jourJIndex = 0, jourJTimer = null, jourJBlockStartTs = null;
 const SCRIPT_SPEAKER_COLORS = [
   ['#d7eaf5','#1b3d6a'],
   ['#fde8dc','#7a3209'],
@@ -74,7 +75,7 @@ const B = (id,titre,type,duree,qui,colonne,extra={}) =>
   ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',script:'',createdBy:'',...extra});
 
 function defaultDoc(){
-  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}, sharedNotes:{}};
+  return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}, sharedNotes:{}, checklist:{}};
 }
 
 /* ── Normalisation ── */
@@ -219,6 +220,12 @@ function fmtDur(min){
   if(min<60) return min+'min';
   const h=Math.floor(min/60), m=min%60;
   return m ? h+'h'+String(m).padStart(2,'0') : h+'h';
+}
+
+function timeAt(hhmmStr, addMin){
+  const parts=(hhmmStr||'15:00').split(':');
+  const total=parseInt(parts[0]||15)*60+parseInt(parts[1]||0)+addMin;
+  return String(Math.floor(total/60)%24).padStart(2,'0')+'h'+String(total%60).padStart(2,'0');
 }
 
 function quiDistrib(blocs){
@@ -589,6 +596,73 @@ function renderScriptMode(){
   </div>`;
 }
 
+/* ── Mode Répétition ── */
+function updateJourJTimer(){
+  const el=document.getElementById('jj-timer');
+  if(!el){if(jourJTimer){clearInterval(jourJTimer);jourJTimer=null;}return;}
+  if(!jourJBlockStartTs) return;
+  const elapsed=Math.floor((Date.now()-jourJBlockStartTs)/1000);
+  const deroule=S?blocsParCol('deroule'):[];
+  const b=deroule[jourJIndex];
+  const expected=(b?(b.duree||0):0)*60;
+  const pct=expected>0?elapsed/expected:0;
+  el.style.color=pct<0.8?'var(--ok)':pct<1?'#c48a00':'var(--warn)';
+  el.textContent=Math.floor(elapsed/60)+'\''+String(elapsed%60).padStart(2,'0');
+}
+
+function startJourJTimer(){
+  if(jourJTimer) return;
+  jourJTimer=setInterval(updateJourJTimer,1000);
+}
+
+function stopJourJTimer(){
+  if(jourJTimer){clearInterval(jourJTimer);jourJTimer=null;}
+}
+
+function renderJourJ(){
+  if(!S) return '';
+  const deroule=blocsParCol('deroule');
+  if(!deroule.length) return '<div class="jj-view"><p style="padding:20px;color:var(--mut)">Aucun bloc dans le déroulé final.</p></div>';
+  const idx=Math.min(jourJIndex,deroule.length-1);
+  const b=deroule[idx];
+  const typeInfo=S.types[b.type]||{emoji:'•'};
+  const qui=quiList(b.qui);
+  const isFirst=idx===0, isLast=idx===deroule.length-1;
+  const prevMin=deroule.slice(0,idx).reduce((s,x)=>s+(x.duree||0),0);
+  const startT=timeAt(R.startTime||'15:00',prevMin);
+  const endT=timeAt(R.startTime||'15:00',prevMin+(b.duree||0));
+  const nextBloc=!isLast?deroule[idx+1]:null;
+  const nextTypeInfo=nextBloc?(S.types[nextBloc.type]||{emoji:'•'}):null;
+  return `<div class="jj-view">
+    <div class="jj-hd noprint">
+      <button class="sm ghost" data-act="exitJourJ">✕ Quitter</button>
+      <span class="jj-progress">${idx+1} / ${deroule.length}</span>
+      <span class="jj-start-time">${startT} → ${endT}</span>
+    </div>
+    <div class="jj-bloc">
+      <div class="jj-type">${typeInfo.emoji}</div>
+      <h2 class="jj-titre">${esc(b.titre)}</h2>
+      <div class="jj-meta">
+        ${qui.map(q=>`<span class="chip">${esc(q)}</span>`).join('')}
+        <span class="jj-dur">${fmtDur(b.duree||0)}</span>
+      </div>
+      <div class="jj-timer-wrap noprint">
+        <span id="jj-timer" class="jj-timer">0'00</span>
+        <span class="jj-timer-label">/ ${fmtDur(b.duree||0)}</span>
+      </div>
+      ${b.script?`<div class="jj-script">${renderScript(b.script)}</div>`:''}
+      ${b.notes&&!b.script?`<p class="jj-notes">${esc(b.notes)}</p>`:''}
+    </div>
+    <div class="jj-nav noprint">
+      <button class="jj-nav-btn" data-act="jourJPrev" ${isFirst?'disabled':''}>← Préc.</button>
+      <button class="jj-nav-btn pri" data-act="jourJNext" ${isLast?'disabled':''}>Suivant →</button>
+    </div>
+    <div class="jj-next-preview">
+      ${nextBloc?`Suivant : ${nextTypeInfo.emoji} ${esc(nextBloc.titre)} · ${fmtDur(nextBloc.duree||0)}`:'🎉 Fin de la cérémonie'}
+    </div>
+  </div>`;
+}
+
 /* ── Rendu principal ── */
 function render(){
   const app=document.getElementById('app');
@@ -627,11 +701,14 @@ function render(){
     const leftTitle  = !disLeft  ? COLS[COL_ORDER[colIdx-1]] : '';
     const rightTitle = !disRight ? COLS[COL_ORDER[colIdx+1]] : '';
 
+    let runMin = 0;
     const cards = blocs.map((b,i) => {
       const isEd = editing===b.id;
       const lock = lockInfo(b.id);
       const lockedByOther = lock&&lock.by!==myPseudo;
       const typeInfo = S.types[b.type]||{emoji:'•'};
+      const blockStart = colKey==='deroule' ? timeAt(startHHMM, runMin) : null;
+      runMin += b.duree||0;
 
       const v=blockVotes(b.id);
       const upVoters=Object.keys(v.up), downVoters=Object.keys(v.down);
@@ -641,6 +718,7 @@ function render(){
 
       return `<article class="card${lockedByOther?' locked':''}" data-id="${b.id}" data-col="${b.colonne}" ${isEd||lockedByOther?'':'draggable="true"'}>
         <div class="card-body">
+          ${blockStart?`<div class="bloc-time-badge">${blockStart}</div>`:''}
           ${lockedByOther?`<div class="lock-badge">🔒 ${esc(lock.by)} modifie ce bloc…</div>`:''}
           <h3>${typeInfo.emoji} ${esc(b.titre)}</h3>
           <div class="card-meta">
@@ -697,7 +775,8 @@ function render(){
       <div class="hd-right">
         <button class="pseudo-chip noprint hd-desktop" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
         <button class="sm noprint hd-desktop${scriptMode?' active-mode':''}" data-act="toggleScriptMode">📜 Script</button>
-        <button class="pri sm noprint hd-desktop" data-act="openAdd" style="${scriptMode?'display:none':''}">+ Ajouter</button>
+        <button class="sm noprint hd-desktop${jourJMode?' active-mode':''}" data-act="toggleJourJ">▶ Répétition</button>
+        <button class="pri sm noprint hd-desktop" data-act="openAdd" style="${scriptMode||jourJMode?'display:none':''}">+ Ajouter</button>
         <button class="icon-btn noprint hd-desktop" data-act="openSettings" title="Paramètres">⚙</button>
         <button class="icon-btn noprint hd-mobile-btn" data-act="openMenu" title="Menu" style="font-size:1.3rem;min-height:36px">≡</button>
       </div>
@@ -722,13 +801,17 @@ function render(){
       ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${fmtDur(Math.round(quiD.Tanguy))} · Bastos ${fmtDur(Math.round(quiD.Bastos))}</p>`:''}
     </section>
 
-    ${scriptMode ? renderScriptMode() : `<div class="columns">
+    ${jourJMode ? renderJourJ() : scriptMode ? renderScriptMode() : `<div class="columns">
       ${renderCol('deroule')}
       ${renderCol('valide')}
       ${renderCol('a_trancher')}
     </div>
     ${renderSharedNotes()}
-    ${mats.length?`<section class="panel"><h2>Matériel</h2><ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span style="color:var(--mut)">— ${esc(b.titre)}</span></li>`).join('')}</ul></section>`:''}
+    ${(()=>{
+      const cl=R.checklist||{};
+      const done=mats.filter(b=>cl[b.id]).length;
+      return mats.length?`<section class="panel"><h2>Checklist matériel <span class="mat-count">${done}/${mats.length}</span></h2><ul class="mat-list">${mats.map(b=>{const ck=cl[b.id];return`<li class="mat-item${ck?' checked':''}"><label><input type="checkbox" data-mat="1" data-id="${b.id}" ${ck?'checked':''}><span class="mat-text">${esc(b.materiel)}</span> <span class="mat-src">— ${esc(b.titre)}</span></label></li>`;}).join('')}</ul>${done===mats.length?'<p class="mat-done">Tout est pret !</p>':done>0?`<button class="sm ghost noprint" data-act="resetChecklist" style="margin-top:8px">Tout décocher</button>`:''}</section>`:'';
+    })()}
     ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`}`;
 
   if(!myPseudo) showPseudoOverlay();
@@ -736,6 +819,7 @@ function render(){
   renderChat();
   renderMobileMenu();
   updateTypingIndicator();
+  if(jourJMode) startJourJTimer();
 }
 
 /* ── Menu mobile ── */
@@ -752,8 +836,9 @@ function renderMobileMenu(){
         <button class="modal-close" data-act="closeMenu">✕</button>
       </div>
       <button class="menu-item" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Choisir un pseudo'}</button>
-      ${!scriptMode?`<button class="menu-item" data-act="openAdd">➕ Ajouter un bloc</button>`:''}
+      ${!scriptMode&&!jourJMode?`<button class="menu-item" data-act="openAdd">➕ Ajouter un bloc</button>`:''}
       <button class="menu-item${scriptMode?' script-active':''}" data-act="toggleScriptMode">📜 Mode script${scriptMode?' (actif)':''}</button>
+      <button class="menu-item${jourJMode?' script-active':''}" data-act="toggleJourJ">▶ Mode Répétition${jourJMode?' (actif)':''}</button>
       <button class="menu-item" data-act="openSettings">⚙ Paramètres</button>
     </div>`;
 }
@@ -954,7 +1039,33 @@ document.addEventListener('click',e=>{
     render();
   }
   else if(act==='toggleScriptMode'){
-    scriptMode=!scriptMode; render();
+    scriptMode=!scriptMode;
+    if(scriptMode){jourJMode=false;stopJourJTimer();}
+    render();
+  }
+  else if(act==='toggleJourJ'){
+    if(jourJMode){jourJMode=false;stopJourJTimer();}
+    else{jourJMode=true;scriptMode=false;jourJIndex=0;jourJBlockStartTs=Date.now();}
+    render();
+  }
+  else if(act==='exitJourJ'){
+    jourJMode=false;stopJourJTimer();render();
+  }
+  else if(act==='jourJNext'){
+    const deroule=blocsParCol('deroule');
+    if(jourJIndex<deroule.length-1){jourJIndex++;jourJBlockStartTs=Date.now();}
+    render();
+  }
+  else if(act==='jourJPrev'){
+    if(jourJIndex>0){jourJIndex--;jourJBlockStartTs=Date.now();}
+    render();
+  }
+  else if(act==='resetChecklist'){
+    if(confirm('Tout décocher ?')){
+      const patch={};
+      S.blocs.filter(b=>b.materiel.trim()).forEach(b=>{if(R.checklist&&R.checklist[b.id])patch['checklist/'+b.id]=null;});
+      if(Object.keys(patch).length) update(patch);
+    }
   }
   else if(act==='openMenu'){
     menuOpen=true; renderMobileMenu();
@@ -1034,6 +1145,18 @@ document.addEventListener('input',e=>{
 
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.dataset.mat){
+    sendSilent({['checklist/'+el.dataset.id]: el.checked?true:null});
+    el.closest('.mat-item')?.classList.toggle('checked',el.checked);
+    // update count badge
+    const badge=document.querySelector('.mat-count');
+    if(badge){
+      const all=document.querySelectorAll('.mat-list input[type=checkbox]');
+      const done=[...all].filter(x=>x.checked).length;
+      badge.textContent=done+'/'+all.length;
+    }
+    return;
+  }
   if(el.id==='start-time-input'){
     update({'startTime':el.value}); return;
   }
