@@ -56,9 +56,11 @@ let inflight = 0, chain = Promise.resolve(), deferred = false;
 let status = ONLINE ? 'wait' : 'demo';
 let chatOpen = false;
 let typingTimer = null;
+let scriptMode = false;
+const scriptOpen = new Set();
 
 const B = (id,titre,type,duree,qui,colonne,extra={}) =>
-  ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',createdBy:'',...extra});
+  ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',script:'',createdBy:'',...extra});
 
 function defaultDoc(){
   return {types:DEFAULT_TYPES, qui:DEFAULT_QUI, blocs:{}, users:{}, locks:{}, chat:{}, votes:{}, startTime:'15:00', typing:{}, sharedNotes:{}};
@@ -67,7 +69,7 @@ function defaultDoc(){
 /* ── Normalisation ── */
 const nb = b => {
   const block = Object.assign({titre:'',type:'autre',duree:0,qui:'',colonne:'',
-    musique:'',materiel:'',notes:'',pos:0,createdBy:''}, b);
+    musique:'',materiel:'',notes:'',script:'',pos:0,createdBy:''}, b);
   if(!block.colonne) block.colonne = (b.statut==='ok') ? 'deroule' : 'a_trancher';
   if(Array.isArray(block.qui)) block.qui = block.qui.join(',');
   else if(typeof block.qui==='object'&&block.qui!==null) block.qui = Object.values(block.qui).join(',');
@@ -515,6 +517,42 @@ function renderSharedNotes(){
   </section>`;
 }
 
+/* ── Script ── */
+function renderScript(text){
+  if(!text||!text.trim()) return '<span class="sr-empty">Aucun script.</span>';
+  return text.split('\n').map(line=>{
+    const tMatch=line.match(/^T:\s*(.*)/);
+    const bMatch=line.match(/^B:\s*(.*)/);
+    if(tMatch) return `<div class="sr-line sr-t"><span class="sr-who">T</span><span class="sr-text">${esc(tMatch[1])}</span></div>`;
+    if(bMatch) return `<div class="sr-line sr-b"><span class="sr-who">B</span><span class="sr-text">${esc(bMatch[1])}</span></div>`;
+    if(line.trim()) return `<div class="sr-line sr-dir"><span class="sr-text">${esc(line)}</span></div>`;
+    return '<div class="sr-gap"></div>';
+  }).join('');
+}
+
+function renderScriptMode(){
+  if(!S) return '';
+  const deroule=blocsParCol('deroule');
+  const totalMin=deroule.reduce((s,b)=>s+(b.duree||0),0);
+  return `<div class="script-view">
+    <div class="script-view-hd">
+      <h2>Script complet</h2>
+      <span class="script-view-meta">${deroule.length} blocs · ${fmtDur(totalMin)}</span>
+    </div>
+    ${deroule.map(b=>{
+      const typeInfo=S.types[b.type]||{emoji:'•'};
+      const qui=quiList(b.qui);
+      return `<div class="script-bloc">
+        <div class="script-bloc-hd">
+          <span class="script-bloc-title">${typeInfo.emoji} ${esc(b.titre)}</span>
+          <span class="script-bloc-meta">${fmtDur(b.duree)}${qui.length?' · '+qui.join(', '):''}</span>
+        </div>
+        ${b.script?`<div class="script-rendered">${renderScript(b.script)}</div>`:'<p class="script-no-text">— pas de script —</p>'}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 /* ── Rendu principal ── */
 function render(){
   const app=document.getElementById('app');
@@ -581,6 +619,8 @@ function render(){
             <button class="vote-btn${myDown?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="down">👎${downCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="down">${downCount}</span>`:''}</button>
           </div>`:''}
           ${isEd?form(b):''}
+          <div class="script-toggle-row noprint"><button class="sm ghost script-tog${scriptOpen.has(b.id)?' open':''}" data-act="toggleScript" data-id="${b.id}">📝${b.script?' ·':''}</button></div>
+          ${scriptOpen.has(b.id)?`<div class="script-panel"><textarea class="script-ta" data-f="script" data-id="${b.id}" placeholder="T: Bonjour et bienvenue…&#10;B: Nous sommes réunis ici…&#10;// direction de scène">${esc(b.script||'')}</textarea><div class="script-preview">${renderScript(b.script||'')}</div></div>`:''}
         </div>
         <div class="act noprint">
           <button class="sm" data-act="up"       data-id="${b.id}" ${i===0?'disabled':''}>↑</button>
@@ -611,7 +651,8 @@ function render(){
       </div>
       <div class="hd-right">
         <button class="pseudo-chip noprint" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
-        <button class="pri sm noprint" data-act="openAdd">+ Ajouter</button>
+        <button class="sm noprint${scriptMode?' active-mode':''}" data-act="toggleScriptMode">${scriptMode?'← Retour':'📜 Script'}</button>
+        <button class="pri sm noprint" data-act="openAdd" style="${scriptMode?'display:none':''}">+ Ajouter</button>
         <button class="icon-btn noprint" data-act="openSettings" title="Paramètres">⚙</button>
       </div>
     </div>
@@ -635,20 +676,14 @@ function render(){
       ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${fmtDur(Math.round(quiD.Tanguy))} · Bastos ${fmtDur(Math.round(quiD.Bastos))}</p>`:''}
     </section>
 
-    <div class="columns">
+    ${scriptMode ? renderScriptMode() : `<div class="columns">
       ${renderCol('deroule')}
       ${renderCol('valide')}
       ${renderCol('a_trancher')}
     </div>
-
     ${renderSharedNotes()}
-
-    ${mats.length?`<section class="panel">
-      <h2>Matériel</h2>
-      <ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span style="color:var(--mut)">— ${esc(b.titre)}</span></li>`).join('')}</ul>
-    </section>`:''}
-
-    ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`;
+    ${mats.length?`<section class="panel"><h2>Matériel</h2><ul class="l">${mats.map(b=>`<li>${esc(b.materiel)} <span style="color:var(--mut)">— ${esc(b.titre)}</span></li>`).join('')}</ul></section>`:''}
+    ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`}`;
 
   if(!myPseudo) showPseudoOverlay();
   renderChatBtn();
@@ -842,6 +877,13 @@ document.addEventListener('click',e=>{
     myPseudo=''; localStorage.removeItem('ceremonie_pseudo'); localStorage.removeItem('ceremonie_auth');
     showPseudoOverlay(prev);
   }
+  else if(act==='toggleScript'){
+    if(scriptOpen.has(id)) scriptOpen.delete(id); else scriptOpen.add(id);
+    render();
+  }
+  else if(act==='toggleScriptMode'){
+    scriptMode=!scriptMode; render();
+  }
   else if(act==='toggleChat'){
     chatOpen=!chatOpen;
     renderChat();
@@ -867,6 +909,14 @@ document.addEventListener('click',e=>{
       if(editing) setEditing(null);
       replaceAll(defaultDoc());
     }
+  }
+});
+
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.f==='script'){
+    const preview=el.closest('.script-panel')?.querySelector('.script-preview');
+    if(preview) preview.innerHTML=renderScript(el.value);
   }
 });
 
