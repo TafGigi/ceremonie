@@ -68,6 +68,7 @@ let menuOpen   = false;
 const scriptOpen = new Set();
 const notesOpen  = new Set();
 let jourJMode = false, jourJIndex = 0, jourJTimer = null, jourJBlockStartTs = null;
+let jourJPaused = false, jourJPausedElapsed = 0, jourJTotalElapsed = 0;
 let theme = localStorage.getItem('ceremonie_theme')||'light';
 function applyTheme(){ document.documentElement.className = theme==='light'?'':theme; }
 function setTheme(t){ const prev=theme; theme=t; localStorage.setItem('ceremonie_theme',t); applyTheme(); render(); if(t==='clownard'&&prev!=='clownard') clownardSplash(); }
@@ -639,14 +640,16 @@ function renderScriptMode(){
 function updateJourJTimer(){
   const el=document.getElementById('jj-timer');
   if(!el){if(jourJTimer){clearInterval(jourJTimer);jourJTimer=null;}return;}
-  if(!jourJBlockStartTs) return;
-  const elapsed=Math.floor((Date.now()-jourJBlockStartTs)/1000);
+  const elapsed=jourJPaused?jourJPausedElapsed:jourJBlockStartTs?Math.floor((Date.now()-jourJBlockStartTs)/1000):0;
+  if(!jourJPaused && jourJBlockStartTs) jourJTotalElapsed++;
   const deroule=S?blocsParCol('deroule'):[];
   const b=deroule[jourJIndex];
   const expected=(b?(b.duree||0):0)*60;
   const pct=expected>0?elapsed/expected:0;
   el.style.color=pct<0.8?'var(--ok)':pct<1?'#c48a00':'var(--warn)';
   el.textContent=Math.floor(elapsed/60)+'\''+String(elapsed%60).padStart(2,'0');
+  const tot=document.getElementById('jj-total');
+  if(tot) tot.textContent=Math.floor(jourJTotalElapsed/60)+'\''+String(jourJTotalElapsed%60).padStart(2,'0');
 }
 
 function startJourJTimer(){
@@ -677,6 +680,8 @@ function renderJourJ(){
       <button class="sm ghost" data-act="exitJourJ">✕ Quitter</button>
       <span class="jj-progress">${idx+1} / ${deroule.length}</span>
       <span class="jj-start-time">${startT} → ${endT}</span>
+      <span class="jj-total-wrap">⏱ <span id="jj-total" class="jj-total">0'00</span> total</span>
+      <button class="sm ghost" data-act="jourJReset" title="Tout recommencer depuis le début">↺ Début</button>
     </div>
     <div class="jj-bloc">
       <div class="jj-type">${typeInfo.emoji}</div>
@@ -688,6 +693,10 @@ function renderJourJ(){
       <div class="jj-timer-wrap noprint">
         <span id="jj-timer" class="jj-timer">0'00</span>
         <span class="jj-timer-label">/ ${fmtDur(b.duree||0)}</span>
+        <div class="jj-timer-btns">
+          <button class="sm ghost" data-act="${jourJPaused?'jourJResume':'jourJPause'}" title="${jourJPaused?'Reprendre':'Pause'}">${jourJPaused?(jourJPausedElapsed===0?'▶ Démarrer':'▶'):'⏸'}</button>
+          <button class="sm ghost" data-act="jourJRestart" title="Recommencer le bloc">↺</button>
+        </div>
       </div>
       ${b.script?`<div class="jj-script">${renderScript(b.script)}</div>`:''}
       ${b.notes&&!b.script?`<p class="jj-notes">${esc(b.notes)}</p>`:''}
@@ -814,7 +823,7 @@ function render(){
     <div class="sticky-hd">
       <div class="hd">
         <div class="hd-left">
-          <img src="${theme==='clownard'?'gigi-clown.webp':'gigi.webp'}" alt="" class="logo">
+          <img src="${theme==='clownard'?'gigi-clown.webp':'gigi.webp'}" alt="" class="logo" data-act="goHome" style="${scriptMode||jourJMode?'cursor:pointer':''}" title="${scriptMode||jourJMode?'Retour aux cartes':''}">
           <h1>Déroulé cérémonie</h1>
         </div>
         <div class="hd-right">
@@ -887,7 +896,7 @@ function render(){
   renderChat();
   renderMobileMenu();
   updateTypingIndicator();
-  if(jourJMode) startJourJTimer();
+  if(jourJMode){ startJourJTimer(); updateJourJTimer(); }
   initColDots();
 }
 
@@ -1132,7 +1141,7 @@ document.addEventListener('click',e=>{
   }
   else if(act==='toggleJourJ'){
     if(jourJMode){jourJMode=false;stopJourJTimer();}
-    else{jourJMode=true;scriptMode=false;jourJIndex=0;jourJBlockStartTs=Date.now();}
+    else{jourJMode=true;scriptMode=false;jourJIndex=0;jourJBlockStartTs=null;jourJPaused=true;jourJPausedElapsed=0;jourJTotalElapsed=0;}
     render();
   }
   else if(act==='exitJourJ'){
@@ -1140,12 +1149,31 @@ document.addEventListener('click',e=>{
   }
   else if(act==='jourJNext'){
     const deroule=blocsParCol('deroule');
-    if(jourJIndex<deroule.length-1){jourJIndex++;jourJBlockStartTs=Date.now();}
+    if(jourJIndex<deroule.length-1){jourJIndex++;jourJBlockStartTs=Date.now();jourJPaused=false;jourJPausedElapsed=0;startJourJTimer();}
     render();
   }
   else if(act==='jourJPrev'){
-    if(jourJIndex>0){jourJIndex--;jourJBlockStartTs=Date.now();}
+    if(jourJIndex>0){jourJIndex--;jourJBlockStartTs=Date.now();jourJPaused=false;jourJPausedElapsed=0;startJourJTimer();}
     render();
+  }
+  else if(act==='jourJPause'){
+    jourJPausedElapsed=jourJBlockStartTs?Math.floor((Date.now()-jourJBlockStartTs)/1000):0;
+    jourJPaused=true; stopJourJTimer(); render();
+  }
+  else if(act==='jourJResume'){
+    jourJPaused=false; jourJBlockStartTs=Date.now()-jourJPausedElapsed*1000;
+    startJourJTimer(); render();
+  }
+  else if(act==='jourJRestart'){
+    jourJPaused=false; jourJPausedElapsed=0; jourJBlockStartTs=Date.now();
+    startJourJTimer(); render();
+  }
+  else if(act==='jourJReset'){
+    jourJIndex=0; jourJPaused=true; jourJPausedElapsed=0; jourJBlockStartTs=null; jourJTotalElapsed=0;
+    stopJourJTimer(); render();
+  }
+  else if(act==='goHome'){
+    if(scriptMode||jourJMode){ scriptMode=false; jourJMode=false; stopJourJTimer(); render(); }
   }
   else if(act==='toggleTheme'){
     setTheme(theme==='light'?'dark':theme==='dark'?'clownard':'light');
