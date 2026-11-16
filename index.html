@@ -1546,7 +1546,7 @@ document.addEventListener('touchend',e=>{
 
 document.addEventListener('touchcancel',()=>{
   clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
-  touchCleanup();
+  if(!touchDragActive) touchCleanup();
 });
 
 /* ── Konami → Mode Clownard ── */
