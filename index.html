@@ -1409,6 +1409,7 @@ let touchStartX=0, touchStartY=0, touchOffsetX=0, touchOffsetY=0;
 
 function touchCleanup(){
   dragScrollDir=0; dragScrollRaf=null;
+  removeColZoneOverlay();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   removeDropLine();
   if(touchClone){touchClone.remove();touchClone=null;}
@@ -1439,6 +1440,29 @@ document.addEventListener('touchstart',e=>{
   },350);
 },{passive:true});
 
+function getTouchColZone(clientX){
+  const w=window.innerWidth, edge=w*0.18;
+  if(clientX<edge) return 'left';
+  if(clientX>w-edge) return 'right';
+  return null;
+}
+function getColZoneTarget(currentColonne, zone){
+  const idx=COL_ORDER.indexOf(currentColonne);
+  if(zone==='left'&&idx>0) return COL_ORDER[idx-1];
+  if(zone==='right'&&idx<COL_ORDER.length-1) return COL_ORDER[idx+1];
+  return null;
+}
+function showColZoneOverlay(zone, colKey){
+  removeColZoneOverlay();
+  if(!zone||!colKey) return;
+  const ov=document.createElement('div'); ov.id='col-zone-ov';
+  const label=COLS[colKey]||colKey;
+  ov.style.cssText=`position:fixed;top:0;bottom:0;${zone==='left'?'left:0':'right:0'};width:18%;background:rgba(111,130,116,.22);border-${zone==='left'?'right':'left'}:3px solid var(--acc);z-index:8999;display:flex;align-items:center;justify-content:center;pointer-events:none;`;
+  ov.innerHTML=`<span style="writing-mode:vertical-rl;font-size:.75rem;font-weight:800;color:var(--acc);letter-spacing:.08em;text-transform:uppercase;padding:8px">${label}</span>`;
+  document.body.appendChild(ov);
+}
+function removeColZoneOverlay(){ document.getElementById('col-zone-ov')?.remove(); }
+
 document.addEventListener('touchmove',e=>{
   if(touchLongPressTimer&&!touchDragActive){
     const t=e.touches[0];
@@ -1452,10 +1476,16 @@ document.addEventListener('touchmove',e=>{
   const t=e.touches[0];
   touchClone.style.left=(t.clientX-touchOffsetX)+'px';
   touchClone.style.top=(t.clientY-touchOffsetY)+'px';
+  // vertical auto-scroll
   const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
   if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
-  const colsWrap=document.querySelector('.columns');
-  if(colsWrap){const hzone=70,hDir=t.clientX<hzone?-1:t.clientX>window.innerWidth-hzone?1:0;if(hDir)colsWrap.scrollLeft+=hDir*12;}
+  // inter-column zone overlay
+  const b=S?.blocs.find(b=>b.id===touchDragId);
+  const hZone=getTouchColZone(t.clientX);
+  const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
+  showColZoneOverlay(hZone,colTarget);
+  if(hZone){ removeDropLine(); return; }
+  // intra-column drop line
   touchClone.style.pointerEvents='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
@@ -1477,6 +1507,16 @@ document.addEventListener('touchend',e=>{
   clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
   if(!touchDragActive) return;
   const t=e.changedTouches[0];
+  removeColZoneOverlay();
+  // check inter-column zone
+  const b=S?.blocs.find(b=>b.id===touchDragId);
+  const hZone=getTouchColZone(t.clientX);
+  const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
+  if(colTarget&&touchDragId){
+    moveToCol(touchDragId,colTarget,null,true);
+    touchCleanup(); return;
+  }
+  // normal intra-column drop
   if(touchClone) touchClone.style.display='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
   const col=under?.closest('.col');
