@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Déroulé cérémonie">
 <link rel="icon" href="gigi.webp">
 <link rel="apple-touch-icon" href="gigi.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <title>Déroulé cérémonie</title>
 </head>
@@ -525,7 +528,7 @@ function renderSharedNotes(){
       </div>
       <p class="snote-text">${esc(n.text)}</p>
     </div>`).join('');
-  return `<section class="panel">
+  return `<section class="panel panel-secondary">
     <h2>Notes partagées</h2>
     ${notesHTML||'<p style="color:var(--mut);font-size:.83rem;font-style:italic;margin:0 0 8px">Aucune note pour l\'instant.</p>'}
     <div class="add-note-row noprint">
@@ -767,29 +770,45 @@ function render(){
   };
 
   app.innerHTML = `
-    <div class="hd">
-      <div class="hd-left">
-        <img src="gigi.webp" alt="" class="logo">
-        <h1>Déroulé cérémonie</h1>
+    <div class="sticky-hd">
+      <div class="hd">
+        <div class="hd-left">
+          <img src="gigi.webp" alt="" class="logo">
+          <h1>Déroulé cérémonie</h1>
+        </div>
+        <div class="hd-right">
+          <button class="pri sm noprint hd-desktop" data-act="openAdd" style="${scriptMode||jourJMode?'display:none':''}">+ Ajouter</button>
+          <div class="mode-group noprint hd-desktop">
+            <button class="${scriptMode?'active-mode':''}" data-act="toggleScriptMode" title="Mode script">📜 Script</button>
+            <button class="${jourJMode?'active-mode':''}" data-act="toggleJourJ" title="Mode Répétition">▶ Répét.</button>
+          </div>
+          <button class="pseudo-chip noprint hd-desktop" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
+          <button class="icon-btn noprint hd-desktop" data-act="openSettings" title="Paramètres">⚙</button>
+          <button class="icon-btn noprint hd-mobile-btn" data-act="openMenu" title="Menu" style="font-size:1.3rem;min-height:36px">≡</button>
+        </div>
       </div>
-      <div class="hd-right">
-        <button class="pseudo-chip noprint hd-desktop" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
-        <button class="sm noprint hd-desktop${scriptMode?' active-mode':''}" data-act="toggleScriptMode">📜 Script</button>
-        <button class="sm noprint hd-desktop${jourJMode?' active-mode':''}" data-act="toggleJourJ">▶ Répétition</button>
-        <button class="pri sm noprint hd-desktop" data-act="openAdd" style="${scriptMode||jourJMode?'display:none':''}">+ Ajouter</button>
-        <button class="icon-btn noprint hd-desktop" data-act="openSettings" title="Paramètres">⚙</button>
-        <button class="icon-btn noprint hd-mobile-btn" data-act="openMenu" title="Menu" style="font-size:1.3rem;min-height:36px">≡</button>
-      </div>
+      <p class="sub"><span id="sync" class="sync ${status}">${syncLabel()}</span></p>
     </div>
-    <p class="sub"><span id="sync" class="sync ${status}">${syncLabel()}</span></p>
     ${ONLINE?'':'<div class="panel noprint"><p style="margin:0;font-size:.86rem">Mode démo — renseigne <b>DB_URL</b> en haut du fichier.</p></div>'}
 
-    <section class="panel">
-      <h2>Bilan — déroulé</h2>
-      <div class="sum">
-        <span>Début <input type="time" id="start-time-input" class="time-inline" value="${startHHMM}"> → Fin <b>${endTime}</b></span>
-        <span><b>${deroule.length} blocs</b> · <b>${fmtDur(totalMin)}</b></span>
-        <span style="font-size:.79rem;color:var(--mut)">Validé ${blocsParCol('valide').length} · À discuter ${blocsParCol('a_trancher').length}</span>
+    <section class="panel panel-bilan">
+      <div class="bilan-top">
+        <div class="bilan-time">
+          <div class="bilan-time-col">
+            <span class="bilan-lbl">Début</span>
+            <input type="time" id="start-time-input" class="time-inline" value="${startHHMM}">
+          </div>
+          <span class="bilan-arrow">→</span>
+          <div class="bilan-time-col">
+            <span class="bilan-lbl">Fin</span>
+            <span class="bilan-end">${endTime}</span>
+          </div>
+        </div>
+        <div class="bilan-stats">
+          <div class="bilan-stat"><span class="bilan-stat-val">${fmtDur(totalMin)}</span><span class="bilan-stat-lbl">durée</span></div>
+          <div class="bilan-stat"><span class="bilan-stat-val">${deroule.length}</span><span class="bilan-stat-lbl">blocs</span></div>
+          <div class="bilan-stat"><span class="bilan-stat-val" style="font-size:.95rem">${blocsParCol('valide').length}+${blocsParCol('a_trancher').length}</span><span class="bilan-stat-lbl">en attente</span></div>
+        </div>
       </div>
       ${typeDist.length?`
       <div class="type-gauge">
@@ -801,16 +820,21 @@ function render(){
       ${(quiD.Tanguy||quiD.Bastos)?`<p class="note-bilan">Tanguy ${fmtDur(Math.round(quiD.Tanguy))} · Bastos ${fmtDur(Math.round(quiD.Bastos))}</p>`:''}
     </section>
 
-    ${jourJMode ? renderJourJ() : scriptMode ? renderScriptMode() : `<div class="columns">
+    ${jourJMode ? renderJourJ() : scriptMode ? renderScriptMode() : `<div class="columns-wrap">
+    <div class="columns">
       ${renderCol('deroule')}
       ${renderCol('valide')}
       ${renderCol('a_trancher')}
     </div>
+    <div class="col-dots noprint">
+      <span class="col-dot"></span><span class="col-dot"></span><span class="col-dot"></span>
+    </div></div>
+    <div class="section-sep noprint"><span>Outils de préparation</span></div>
     ${renderSharedNotes()}
     ${(()=>{
       const cl=R.checklist||{};
       const done=mats.filter(b=>cl[b.id]).length;
-      return mats.length?`<section class="panel"><h2>Checklist matériel <span class="mat-count">${done}/${mats.length}</span></h2><ul class="mat-list">${mats.map(b=>{const ck=cl[b.id];return`<li class="mat-item${ck?' checked':''}"><label><input type="checkbox" data-mat="1" data-id="${b.id}" ${ck?'checked':''}><span class="mat-text">${esc(b.materiel)}</span> <span class="mat-src">— ${esc(b.titre)}</span></label></li>`;}).join('')}</ul>${done===mats.length?'<p class="mat-done">Tout est pret !</p>':done>0?`<button class="sm ghost noprint" data-act="resetChecklist" style="margin-top:8px">Tout décocher</button>`:''}</section>`:'';
+      return mats.length?`<section class="panel panel-secondary"><h2>Checklist matériel <span class="mat-count">${done}/${mats.length}</span></h2><ul class="mat-list">${mats.map(b=>{const ck=cl[b.id];return`<li class="mat-item${ck?' checked':''}"><label><input type="checkbox" data-mat="1" data-id="${b.id}" ${ck?'checked':''}><span class="mat-text">${esc(b.materiel)}</span> <span class="mat-src">— ${esc(b.titre)}</span></label></li>`;}).join('')}</ul>${done===mats.length?'<p class="mat-done">Tout est pret !</p>':done>0?`<button class="sm ghost noprint" data-act="resetChecklist" style="margin-top:8px">Tout décocher</button>`:''}</section>`:'';
     })()}
     ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`}`;
 
@@ -820,6 +844,21 @@ function render(){
   renderMobileMenu();
   updateTypingIndicator();
   if(jourJMode) startJourJTimer();
+  initColDots();
+}
+
+function initColDots(){
+  const cols=document.querySelector('.columns');
+  const dots=[...document.querySelectorAll('.col-dot')];
+  if(!cols||!dots.length) return;
+  const colEls=[...cols.querySelectorAll('.col')];
+  const update=()=>{
+    const idx=colEls.reduce((best,col,i)=>
+      Math.abs(col.offsetLeft-cols.scrollLeft)<Math.abs(colEls[best].offsetLeft-cols.scrollLeft)?i:best,0);
+    dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+  };
+  update();
+  cols.addEventListener('scroll',update,{passive:true});
 }
 
 /* ── Menu mobile ── */
@@ -1143,6 +1182,14 @@ document.addEventListener('input',e=>{
   }
 });
 
+function flashSaved(el){
+  if(!el||el.type==='checkbox') return;
+  el.classList.remove('field-saved');
+  void el.offsetWidth; // force reflow pour relancer l'animation
+  el.classList.add('field-saved');
+  setTimeout(()=>el.classList.remove('field-saved'),900);
+}
+
 document.addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.mat){
@@ -1158,7 +1205,7 @@ document.addEventListener('change',e=>{
     return;
   }
   if(el.id==='start-time-input'){
-    update({'startTime':el.value}); return;
+    update({'startTime':el.value}); flashSaved(el); return;
   }
   if(el.dataset.fq){
     const bid=el.dataset.fq;
@@ -1172,6 +1219,7 @@ document.addEventListener('change',e=>{
     const k=el.dataset.f;
     const v=el.type==='checkbox'?el.checked:(k==='duree'?Math.max(0,parseInt(el.value)||0):el.value);
     update({['blocs/'+el.dataset.id+'/'+k]:v});
+    flashSaved(el);
   }
 });
 
@@ -1240,6 +1288,10 @@ document.addEventListener('drop',e=>{
 });
 
 document.addEventListener('dragend',()=>{ dragId=null; removeDropLine(); render(); });
+
+window.addEventListener('scroll',()=>{
+  document.querySelector('.sticky-hd')?.classList.toggle('scrolled',window.scrollY>20);
+},{passive:true});
 
 /* ── Init ── */
 (async function init(){
