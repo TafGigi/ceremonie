@@ -1340,7 +1340,7 @@ function removeDropLine(){ document.getElementById('drop-line')?.remove(); }
 
 let dragScrollDir=0, dragScrollRaf=null;
 function doDragScroll(){
-  if(!dragId||dragScrollDir===0){dragScrollRaf=null;return;}
+  if((!dragId&&!touchDragActive)||dragScrollDir===0){dragScrollRaf=null;return;}
   window.scrollBy(0,dragScrollDir*10);
   dragScrollRaf=requestAnimationFrame(doDragScroll);
 }
@@ -1402,6 +1402,99 @@ document.addEventListener('drop',e=>{
 });
 
 document.addEventListener('dragend',()=>{ dragId=null; dragScrollDir=0; dragScrollRaf=null; removeDropLine(); render(); });
+
+/* ── Touch Drag & Drop ── */
+let touchDragId=null, touchClone=null, touchDragActive=false, touchLongPressTimer=null;
+let touchStartX=0, touchStartY=0, touchOffsetX=0, touchOffsetY=0;
+
+function touchCleanup(){
+  dragScrollDir=0; dragScrollRaf=null;
+  document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
+  removeDropLine();
+  if(touchClone){touchClone.remove();touchClone=null;}
+  if(touchDragId){
+    const c=document.querySelector(`.card[data-id="${touchDragId}"]`);
+    if(c){c.classList.remove('drag');c.style.opacity='';}
+  }
+  touchDragId=null; touchDragActive=false;
+}
+
+document.addEventListener('touchstart',e=>{
+  const card=e.target.closest('.card');
+  if(!card||e.target.closest('textarea,input,select,button,.voir-plus-btn,.vote-btn,.script-tog,.act')) return;
+  const t=e.touches[0];
+  touchStartX=t.clientX; touchStartY=t.clientY;
+  touchLongPressTimer=setTimeout(()=>{
+    touchDragId=card.dataset.id;
+    touchDragActive=true;
+    navigator.vibrate?.(40);
+    const rect=card.getBoundingClientRect();
+    touchOffsetX=t.clientX-rect.left;
+    touchOffsetY=t.clientY-rect.top;
+    touchClone=card.cloneNode(true);
+    touchClone.querySelectorAll('.noprint,.form').forEach(el=>el.remove());
+    touchClone.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:.88;pointer-events:none;z-index:9000;transform:scale(1.04) rotate(1.5deg);box-shadow:0 12px 32px rgba(0,0,0,.25);border-radius:12px;`;
+    document.body.appendChild(touchClone);
+    card.classList.add('drag'); card.style.opacity='.25';
+  },350);
+},{passive:true});
+
+document.addEventListener('touchmove',e=>{
+  if(touchLongPressTimer&&!touchDragActive){
+    const t=e.touches[0];
+    if(Math.abs(t.clientX-touchStartX)>10||Math.abs(t.clientY-touchStartY)>10){
+      clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
+    }
+    return;
+  }
+  if(!touchDragActive||!touchClone) return;
+  e.preventDefault();
+  const t=e.touches[0];
+  touchClone.style.left=(t.clientX-touchOffsetX)+'px';
+  touchClone.style.top=(t.clientY-touchOffsetY)+'px';
+  const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
+  if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
+  touchClone.style.pointerEvents='none';
+  const under=document.elementFromPoint(t.clientX,t.clientY);
+  document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
+  removeDropLine();
+  const col=under?.closest('.col');
+  if(col){
+    col.classList.add('drag-over');
+    const targetCard=under?.closest('.card');
+    if(targetCard&&targetCard.dataset.id!==touchDragId){
+      placeDropLine(targetCard,t.clientY<=targetCard.getBoundingClientRect().top+targetCard.getBoundingClientRect().height/2);
+    } else {
+      const cards=[...col.querySelectorAll('.col-body .card:not(.drag)')];
+      if(cards.length) placeDropLine(cards[cards.length-1],false);
+    }
+  }
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
+  if(!touchDragActive) return;
+  const t=e.changedTouches[0];
+  if(touchClone) touchClone.style.display='none';
+  const under=document.elementFromPoint(t.clientX,t.clientY);
+  const col=under?.closest('.col');
+  if(col&&touchDragId){
+    const newColonne=col.dataset.col;
+    const targetCard=under.closest('.card');
+    if(targetCard&&targetCard.dataset.id!==touchDragId){
+      const r=targetCard.getBoundingClientRect();
+      moveToCol(touchDragId,newColonne,targetCard.dataset.id,t.clientY>r.top+r.height/2);
+    } else {
+      moveToCol(touchDragId,newColonne,null,true);
+    }
+  }
+  touchCleanup();
+},{passive:true});
+
+document.addEventListener('touchcancel',()=>{
+  clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
+  touchCleanup();
+});
 
 /* ── Konami → Mode Clownard ── */
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
