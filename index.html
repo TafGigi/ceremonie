@@ -23,6 +23,7 @@
 <div id="add-overlay" style="display:none" class="overlay"></div>
 <div id="mobile-menu"></div>
 <button id="chat-btn" class="noprint" data-act="toggleChat"></button>
+<button id="mobile-fab" class="noprint" data-act="openAdd" title="Ajouter un bloc">+</button>
 <div id="chat-panel"></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -49,7 +50,8 @@ const DEFAULT_QUI = {q1:'Tanguy',q2:'Bastos',q3:'Tanguy & Bastos',q4:'Témoin',q
 const COLS      = {deroule:'Déroulé final', valide:'Idées validées', a_trancher:'Idées à discuter'};
 const COL_ORDER = ['deroule','valide','a_trancher'];
 const EMOJIS      = [{k:'up',e:'👍'},{k:'down',e:'👎'},{k:'lol',e:'😂'},{k:'heart',e:'♥️'},{k:'angry',e:'😡'}];
-const TYPE_COLORS = ['#c94c1c','#1d5433','#1b3d6a','#7a3209','#8b4f9e','#1a7a6e','#c48a00','#5a6b7c'];
+const TYPE_COLORS          = ['#c94c1c','#1d5433','#1b3d6a','#7a3209','#8b4f9e','#1a7a6e','#c48a00','#5a6b7c'];
+const TYPE_COLORS_CLOWNARD = ['#e91e8c','#ff9800','#6c5ce7','#00c853','#00b4d8','#f72585','#fd79a8','#a29bfe'];
 
 const uid     = () => Math.random().toString(36).slice(2, 9);
 const quiList = q  => String(q||'').split(',').map(s=>s.trim()).filter(Boolean);
@@ -714,7 +716,8 @@ function render(){
   const startHHMM = R.startTime||'15:00';
   const endTime   = calcEndTime(startHHMM, totalMin);
   const typeKeys  = Object.keys(S.types);
-  const typeColor = k => TYPE_COLORS[typeKeys.indexOf(k) % TYPE_COLORS.length];
+  const palette = theme==='clownard' ? TYPE_COLORS_CLOWNARD : TYPE_COLORS;
+  const typeColor = k => palette[typeKeys.indexOf(k) % palette.length];
 
   const form = b => `<div class="form noprint">
     <div class="grid">
@@ -846,7 +849,7 @@ function render(){
         <div class="bilan-stats">
           <div class="bilan-stat"><span class="bilan-stat-val">${fmtDur(totalMin)}</span><span class="bilan-stat-lbl">durée</span></div>
           <div class="bilan-stat"><span class="bilan-stat-val">${deroule.length}</span><span class="bilan-stat-lbl">blocs</span></div>
-          <div class="bilan-stat"><span class="bilan-stat-val" style="font-size:.95rem">${blocsParCol('valide').length}+${blocsParCol('a_trancher').length}</span><span class="bilan-stat-lbl">en attente</span></div>
+          <div class="bilan-stat"><span class="bilan-stat-val">${blocsParCol('valide').length}+${blocsParCol('a_trancher').length}</span><span class="bilan-stat-lbl">en attente</span></div>
         </div>
       </div>
       ${typeDist.length?`
@@ -878,6 +881,8 @@ function render(){
     ${myPseudo==='Tanguy'?`<div class="row noprint"><button data-act="reset" style="color:var(--warn);border-color:var(--warn)">Réinitialiser</button></div>`:''}`}`;
 
   if(!myPseudo) showPseudoOverlay();
+  const fab=document.getElementById('mobile-fab');
+  if(fab) fab.style.display=(scriptMode||jourJMode)?'none':'';
   renderChatBtn();
   renderChat();
   renderMobileMenu();
@@ -914,7 +919,6 @@ function renderMobileMenu(){
         <button class="modal-close" data-act="closeMenu">✕</button>
       </div>
       <button class="menu-item" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Choisir un pseudo'}</button>
-      ${!scriptMode&&!jourJMode?`<button class="menu-item" data-act="openAdd">➕ Ajouter un bloc</button>`:''}
       <button class="menu-item${scriptMode?' script-active':''}" data-act="toggleScriptMode">📜 Mode script${scriptMode?' (actif)':''}</button>
       <button class="menu-item${jourJMode?' script-active':''}" data-act="toggleJourJ">▶ Mode Répétition${jourJMode?' (actif)':''}</button>
       <button class="menu-item" data-act="toggleTheme">${theme==='light'?'🌙 Mode sombre':theme==='dark'?'🤡 Mode clownard':'☀️ Mode clair'}</button>
