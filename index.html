@@ -1416,10 +1416,29 @@ let touchDragId=null, touchClone=null, touchDragActive=false, touchLongPressTime
 let touchStartX=0, touchStartY=0, touchOffsetX=0, touchOffsetY=0;
 let touchPendingColTarget=null, touchCurrentZone=null;
 
+let touchDropActive=null; // colonne ou 'del' survolée
+
+function showTouchDropboxes(currentColonne){
+  removeTouchDropboxes();
+  const bar=document.createElement('div'); bar.id='touch-dropbar';
+  const boxes=[...COL_ORDER.filter(c=>c!==currentColonne).map(c=>
+    `<div class="touch-dropbox" data-col="${c}">${COLS[c]}</div>`
+  ), `<div class="touch-dropbox touch-dropbox-del" data-col="del">🗑</div>`].join('');
+  bar.innerHTML=boxes;
+  document.body.appendChild(bar);
+}
+function removeTouchDropboxes(){ document.getElementById('touch-dropbar')?.remove(); touchDropActive=null; }
+function getTouchDropbox(x,y){
+  const bar=document.getElementById('touch-dropbar'); if(!bar) return null;
+  for(const box of bar.querySelectorAll('.touch-dropbox')){
+    const r=box.getBoundingClientRect();
+    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom) return box.dataset.col;
+  }
+  return null;
+}
+
 function touchCleanup(){
-  dragScrollDir=0; dragScrollRaf=null;
-  touchPendingColTarget=null; touchCurrentZone=null;
-  removeColZoneOverlay();
+  removeTouchDropboxes();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   removeDropLine();
   if(touchClone){touchClone.remove();touchClone=null;}
@@ -1436,42 +1455,20 @@ document.addEventListener('touchstart',e=>{
   const t=e.touches[0];
   touchStartX=t.clientX; touchStartY=t.clientY;
   touchLongPressTimer=setTimeout(()=>{
+    const bloc=S?.blocs.find(b=>b.id===card.dataset.id); if(!bloc) return;
     touchDragId=card.dataset.id;
     touchDragActive=true;
     navigator.vibrate?.(40);
     const rect=card.getBoundingClientRect();
-    touchOffsetX=t.clientX-rect.left;
-    touchOffsetY=t.clientY-rect.top;
+    touchOffsetX=t.clientX-rect.left; touchOffsetY=t.clientY-rect.top;
     touchClone=card.cloneNode(true);
     touchClone.querySelectorAll('.noprint,.form').forEach(el=>el.remove());
     touchClone.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:.88;pointer-events:none;z-index:9000;transform:scale(1.04) rotate(1.5deg);box-shadow:0 12px 32px rgba(0,0,0,.25);border-radius:12px;`;
     document.body.appendChild(touchClone);
     card.classList.add('drag'); card.style.opacity='.25';
+    showTouchDropboxes(bloc.colonne);
   },350);
 },{passive:true});
-
-function getTouchColZone(clientX){
-  const w=window.innerWidth, edge=w*0.25;
-  if(clientX<edge) return 'left';
-  if(clientX>w-edge) return 'right';
-  return null;
-}
-function getColZoneTarget(currentColonne, zone){
-  const idx=COL_ORDER.indexOf(currentColonne);
-  if(zone==='left'&&idx>0) return COL_ORDER[idx-1];
-  if(zone==='right'&&idx<COL_ORDER.length-1) return COL_ORDER[idx+1];
-  return null;
-}
-function showColZoneOverlay(zone, colKey){
-  removeColZoneOverlay();
-  if(!zone||!colKey) return;
-  const ov=document.createElement('div'); ov.id='col-zone-ov';
-  const label=COLS[colKey]||colKey;
-  ov.style.cssText=`position:fixed;top:0;bottom:0;${zone==='left'?'left:0':'right:0'};width:18%;background:rgba(111,130,116,.22);border-${zone==='left'?'right':'left'}:3px solid var(--acc);z-index:8999;display:flex;align-items:center;justify-content:center;pointer-events:none;`;
-  ov.innerHTML=`<span style="writing-mode:vertical-rl;font-size:.75rem;font-weight:800;color:var(--acc);letter-spacing:.08em;text-transform:uppercase;padding:8px">${label}</span>`;
-  document.body.appendChild(ov);
-}
-function removeColZoneOverlay(){ document.getElementById('col-zone-ov')?.remove(); }
 
 document.addEventListener('touchmove',e=>{
   if(touchLongPressTimer&&!touchDragActive){
@@ -1486,17 +1483,15 @@ document.addEventListener('touchmove',e=>{
   const t=e.touches[0];
   touchClone.style.left=(t.clientX-touchOffsetX)+'px';
   touchClone.style.top=(t.clientY-touchOffsetY)+'px';
-  // inter-column zone overlay
-  const b=S?.blocs.find(b=>b.id===touchDragId);
-  const hZone=getTouchColZone(t.clientX);
-  const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
-  if(hZone!==touchCurrentZone){
-    touchCurrentZone=hZone;
-    touchPendingColTarget=colTarget;
-    showColZoneOverlay(hZone,colTarget);
+  // highlight dropbox sous le doigt
+  const hit=getTouchDropbox(t.clientX,t.clientY);
+  if(hit!==touchDropActive){
+    touchDropActive=hit;
+    document.querySelectorAll('.touch-dropbox').forEach(b=>b.classList.toggle('active',b.dataset.col===hit));
+    if(hit) navigator.vibrate?.(15);
   }
-  if(hZone){ removeDropLine(); return; }
-  // intra-column drop line
+  if(hit){ document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over')); removeDropLine(); return; }
+  // drop line dans la colonne courante
   touchClone.style.pointerEvents='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
@@ -1518,14 +1513,14 @@ document.addEventListener('touchend',e=>{
   clearTimeout(touchLongPressTimer); touchLongPressTimer=null;
   if(!touchDragActive) return;
   const t=e.changedTouches[0];
-  removeColZoneOverlay();
   if(Math.abs(t.clientX-touchStartX)<15&&Math.abs(t.clientY-touchStartY)<15){touchCleanup();return;}
-  // check inter-column zone (use last known target from touchmove)
-  if(touchPendingColTarget&&touchDragId){
-    moveToCol(touchDragId,touchPendingColTarget,null,true);
-    touchPendingColTarget=null; touchCleanup(); return;
+  const hit=getTouchDropbox(t.clientX,t.clientY)||touchDropActive;
+  if(hit&&touchDragId){
+    if(hit==='del'){ if(confirm('Supprimer ce bloc ?')) update({['blocs/'+touchDragId]:null,['locks/'+touchDragId]:null}); }
+    else moveToCol(touchDragId,hit,null,true);
+    touchCleanup(); return;
   }
-  // normal intra-column drop
+  // drop dans la colonne courante
   if(touchClone) touchClone.style.display='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
   const col=under?.closest('.col');
@@ -1536,7 +1531,14 @@ document.addEventListener('touchend',e=>{
       const r=targetCard.getBoundingClientRect();
       moveToCol(touchDragId,newColonne,targetCard.dataset.id,t.clientY>r.top+r.height/2);
     } else {
-      moveToCol(touchDragId,newColonne,null,true);
+      const dropLineEl=document.getElementById('drop-line');
+      if(dropLineEl&&col.contains(dropLineEl)){
+        const prev=dropLineEl.previousElementSibling;
+        const next=dropLineEl.nextElementSibling;
+        if(prev?.dataset?.id&&prev.dataset.id!==touchDragId) moveToCol(touchDragId,newColonne,prev.dataset.id,true);
+        else if(next?.dataset?.id&&next.dataset.id!==touchDragId) moveToCol(touchDragId,newColonne,next.dataset.id,false);
+        else moveToCol(touchDragId,newColonne,null,true);
+      }
     }
   }
   touchCleanup();
