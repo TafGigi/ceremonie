@@ -1414,11 +1414,11 @@ document.addEventListener('dragend',()=>{ dragId=null; dragMoved=false; dragScro
 /* ── Touch Drag & Drop ── */
 let touchDragId=null, touchClone=null, touchDragActive=false, touchLongPressTimer=null;
 let touchStartX=0, touchStartY=0, touchOffsetX=0, touchOffsetY=0;
-let touchPendingColTarget=null;
+let touchPendingColTarget=null, touchCurrentZone=null;
 
 function touchCleanup(){
   dragScrollDir=0; dragScrollRaf=null;
-  touchPendingColTarget=null;
+  touchPendingColTarget=null; touchCurrentZone=null;
   removeColZoneOverlay();
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
   removeDropLine();
@@ -1490,8 +1490,11 @@ document.addEventListener('touchmove',e=>{
   const b=S?.blocs.find(b=>b.id===touchDragId);
   const hZone=getTouchColZone(t.clientX);
   const colTarget=b?getColZoneTarget(b.colonne,hZone):null;
-  touchPendingColTarget=colTarget;
-  showColZoneOverlay(hZone,colTarget);
+  if(hZone!==touchCurrentZone){
+    touchCurrentZone=hZone;
+    touchPendingColTarget=colTarget;
+    showColZoneOverlay(hZone,colTarget);
+  }
   if(hZone){ removeDropLine(); return; }
   // intra-column drop line
   touchClone.style.pointerEvents='none';
