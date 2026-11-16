@@ -17,6 +17,7 @@
 <div id="pseudo-overlay" style="display:none" class="overlay"></div>
 <div id="settings-overlay" style="display:none" class="overlay"></div>
 <div id="add-overlay" style="display:none" class="overlay"></div>
+<div id="mobile-menu"></div>
 <button id="chat-btn" class="noprint" data-act="toggleChat"></button>
 <div id="chat-panel"></div>
 <div class="toast" id="toast"></div>
@@ -57,7 +58,17 @@ let status = ONLINE ? 'wait' : 'demo';
 let chatOpen = false;
 let typingTimer = null;
 let scriptMode = false;
+let menuOpen   = false;
 const scriptOpen = new Set();
+const SCRIPT_SPEAKER_COLORS = [
+  ['#d7eaf5','#1b3d6a'],
+  ['#fde8dc','#7a3209'],
+  ['#e0f5e8','#1d5433'],
+  ['#f5e8f5','#6a1a6a'],
+  ['#fff4d6','#7a5a00'],
+  ['#fce8e8','#8a1a1a'],
+  ['#e8f7f7','#1a5a5a'],
+];
 
 const B = (id,titre,type,duree,qui,colonne,extra={}) =>
   ({id,titre,type,duree,qui,colonne,musique:'',materiel:'',notes:'',script:'',createdBy:'',...extra});
@@ -520,13 +531,25 @@ function renderSharedNotes(){
 /* ── Script ── */
 function renderScript(text){
   if(!text||!text.trim()) return '<span class="sr-empty">Aucun script.</span>';
+  const quiArr = S ? S.quiArr : Object.values(DEFAULT_QUI);
   return text.split('\n').map(line=>{
-    const tMatch=line.match(/^T:\s*(.*)/);
-    const bMatch=line.match(/^B:\s*(.*)/);
-    if(tMatch) return `<div class="sr-line sr-t"><span class="sr-who">T</span><span class="sr-text">${esc(tMatch[1])}</span></div>`;
-    if(bMatch) return `<div class="sr-line sr-b"><span class="sr-who">B</span><span class="sr-text">${esc(bMatch[1])}</span></div>`;
-    if(line.trim()) return `<div class="sr-line sr-dir"><span class="sr-text">${esc(line)}</span></div>`;
-    return '<div class="sr-gap"></div>';
+    if(!line.trim()) return '<div class="sr-gap"></div>';
+    const colonIdx = line.indexOf(':');
+    if(colonIdx > 0){
+      const prefix = line.slice(0, colonIdx).trim();
+      const rest   = line.slice(colonIdx + 1).trim();
+      if(rest){
+        let idx = -1;
+        if(prefix === 'T')      idx = 0;
+        else if(prefix === 'B') idx = 1;
+        else { const i = quiArr.indexOf(prefix); if(i >= 0) idx = i; }
+        if(idx >= 0){
+          const short = (quiArr[idx]||prefix).slice(0,2).toUpperCase();
+          return `<div class="sr-line sr-q${idx}"><span class="sr-who">${esc(short)}</span><span class="sr-text">${esc(rest)}</span></div>`;
+        }
+      }
+    }
+    return `<div class="sr-line sr-dir"><span class="sr-text">${esc(line)}</span></div>`;
   }).join('');
 }
 
@@ -538,16 +561,29 @@ function renderScriptMode(){
     <div class="script-view-hd">
       <h2>Script complet</h2>
       <span class="script-view-meta">${deroule.length} blocs · ${fmtDur(totalMin)}</span>
+      <button class="sm noprint" data-act="toggleScriptMode" style="margin-left:auto;flex-shrink:0">✕ Fermer</button>
     </div>
     ${deroule.map(b=>{
       const typeInfo=S.types[b.type]||{emoji:'•'};
       const qui=quiList(b.qui);
+      const isEd=scriptOpen.has(b.id);
       return `<div class="script-bloc">
         <div class="script-bloc-hd">
           <span class="script-bloc-title">${typeInfo.emoji} ${esc(b.titre)}</span>
           <span class="script-bloc-meta">${fmtDur(b.duree)}${qui.length?' · '+qui.join(', '):''}</span>
+          <button class="sm ghost noprint script-tog${isEd?' open':''}" data-act="toggleScript" data-id="${b.id}" style="margin-left:auto;flex-shrink:0;padding:3px 9px">✎</button>
         </div>
-        ${b.script?`<div class="script-rendered">${renderScript(b.script)}</div>`:'<p class="script-no-text">— pas de script —</p>'}
+        ${isEd?`<div class="script-panel">
+          <div class="script-toolbar noprint">
+            <span class="script-toolbar-label">Intervenant&nbsp;:</span>
+            ${S.quiArr.map((name,qi)=>{const[sbg,sfg]=SCRIPT_SPEAKER_COLORS[qi%SCRIPT_SPEAKER_COLORS.length];return`<button class="se-sp-btn" data-act="insertSpeaker" data-id="${b.id}" data-who="${esc(name)}" style="background:${sbg};color:${sfg};border-color:${sfg}50">${esc(name)}</button>`;}).join('')}
+            <button class="se-sp-btn se-dir" data-act="insertSpeaker" data-id="${b.id}" data-who="">dir</button>
+          </div>
+          <textarea class="script-ta" data-f="script" data-id="${b.id}"
+            placeholder="${S.quiArr.slice(0,2).map(n=>n+': Texte…').join('&#10;')}"
+          >${esc(b.script||'')}</textarea>
+          <div class="script-preview">${renderScript(b.script||'')}</div>
+        </div>`:(b.script?`<div class="script-rendered">${renderScript(b.script)}</div>`:'<p class="script-no-text">— pas de script —</p>')}
       </div>`;
     }).join('')}
   </div>`;
@@ -619,8 +655,17 @@ function render(){
             <button class="vote-btn${myDown?' voted':''}" data-act="vote" data-id="${b.id}" data-dir="down">👎${downCount>0?` <span class="vc" data-act="whoVoted" data-id="${b.id}" data-dir="down">${downCount}</span>`:''}</button>
           </div>`:''}
           ${isEd?form(b):''}
-          <div class="script-toggle-row noprint"><button class="sm ghost script-tog${scriptOpen.has(b.id)?' open':''}" data-act="toggleScript" data-id="${b.id}">📝${b.script?' ·':''}</button></div>
-          ${scriptOpen.has(b.id)?`<div class="script-panel"><textarea class="script-ta" data-f="script" data-id="${b.id}" placeholder="T: Bonjour et bienvenue…&#10;B: Nous sommes réunis ici…&#10;// direction de scène">${esc(b.script||'')}</textarea><div class="script-preview">${renderScript(b.script||'')}</div></div>`:''}
+          <div class="script-toggle-row noprint"><button class="sm ghost script-tog${scriptOpen.has(b.id)?' open':''}" data-act="toggleScript" data-id="${b.id}">📝 Script${b.script?' ·':''}</button></div>
+          ${scriptOpen.has(b.id)?`<div class="script-panel">
+            <div class="script-toolbar noprint">
+              <span class="script-toolbar-label">Intervenant&nbsp;:</span>
+              ${S.quiArr.map((name,qi)=>{const[sbg,sfg]=SCRIPT_SPEAKER_COLORS[qi%SCRIPT_SPEAKER_COLORS.length];return`<button class="se-sp-btn" data-act="insertSpeaker" data-id="${b.id}" data-who="${esc(name)}" style="background:${sbg};color:${sfg};border-color:${sfg}50">${esc(name)}</button>`;}).join('')}
+              <button class="se-sp-btn se-dir" data-act="insertSpeaker" data-id="${b.id}" data-who="" title="Direction de scène">dir</button>
+            </div>
+            <textarea class="script-ta" data-f="script" data-id="${b.id}" placeholder="${S.quiArr.slice(0,2).map(n=>n+': Texte…').join('&#10;')}&#10;(ligne vide = saut, sans préfixe = direction)">${esc(b.script||'')}</textarea>
+            <div class="script-preview">${renderScript(b.script||'')}</div>
+          </div>`:''}
+
         </div>
         <div class="act noprint">
           <button class="sm" data-act="up"       data-id="${b.id}" ${i===0?'disabled':''}>↑</button>
@@ -650,10 +695,11 @@ function render(){
         <h1>Déroulé cérémonie</h1>
       </div>
       <div class="hd-right">
-        <button class="pseudo-chip noprint" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
-        <button class="sm noprint${scriptMode?' active-mode':''}" data-act="toggleScriptMode">${scriptMode?'← Retour':'📜 Script'}</button>
-        <button class="pri sm noprint" data-act="openAdd" style="${scriptMode?'display:none':''}">+ Ajouter</button>
-        <button class="icon-btn noprint" data-act="openSettings" title="Paramètres">⚙</button>
+        <button class="pseudo-chip noprint hd-desktop" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Pseudo'}</button>
+        <button class="sm noprint hd-desktop${scriptMode?' active-mode':''}" data-act="toggleScriptMode">📜 Script</button>
+        <button class="pri sm noprint hd-desktop" data-act="openAdd" style="${scriptMode?'display:none':''}">+ Ajouter</button>
+        <button class="icon-btn noprint hd-desktop" data-act="openSettings" title="Paramètres">⚙</button>
+        <button class="icon-btn noprint hd-mobile-btn" data-act="openMenu" title="Menu" style="font-size:1.3rem;min-height:36px">≡</button>
       </div>
     </div>
     <p class="sub"><span id="sync" class="sync ${status}">${syncLabel()}</span></p>
@@ -688,7 +734,28 @@ function render(){
   if(!myPseudo) showPseudoOverlay();
   renderChatBtn();
   renderChat();
+  renderMobileMenu();
   updateTypingIndicator();
+}
+
+/* ── Menu mobile ── */
+function renderMobileMenu(){
+  const el=document.getElementById('mobile-menu');
+  if(!el) return;
+  if(!menuOpen){ el.className=''; el.innerHTML=''; return; }
+  el.className='open';
+  el.innerHTML=`
+    <div class="menu-backdrop" data-act="closeMenu"></div>
+    <div class="menu-sheet">
+      <div class="menu-sheet-hd">
+        <span>Menu</span>
+        <button class="modal-close" data-act="closeMenu">✕</button>
+      </div>
+      <button class="menu-item" data-act="changePseudo">👤 ${myPseudo?esc(myPseudo):'Choisir un pseudo'}</button>
+      ${!scriptMode?`<button class="menu-item" data-act="openAdd">➕ Ajouter un bloc</button>`:''}
+      <button class="menu-item${scriptMode?' script-active':''}" data-act="toggleScriptMode">📜 Mode script${scriptMode?' (actif)':''}</button>
+      <button class="menu-item" data-act="openSettings">⚙ Paramètres</button>
+    </div>`;
 }
 
 /* ── Toast ── */
@@ -808,6 +875,11 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return;
   const act=el.dataset.act, id=el.dataset.id;
 
+  // Fermer le menu mobile automatiquement sur toute action sauf openMenu/closeMenu
+  if(menuOpen && act!=='openMenu' && act!=='closeMenu'){
+    menuOpen=false; renderMobileMenu();
+  }
+
   if(act==='up'||act==='down'){
     const b=S.blocs.find(x=>x.id===id); if(!b) return;
     const col=blocsParCol(b.colonne), k=col.findIndex(x=>x.id===id);
@@ -884,6 +956,46 @@ document.addEventListener('click',e=>{
   else if(act==='toggleScriptMode'){
     scriptMode=!scriptMode; render();
   }
+  else if(act==='openMenu'){
+    menuOpen=true; renderMobileMenu();
+  }
+  else if(act==='closeMenu'){
+    menuOpen=false; renderMobileMenu();
+  }
+  else if(act==='insertSpeaker'){
+    const ta=document.querySelector(`.script-ta[data-id="${id}"]`);
+    if(!ta) return;
+    const who=el.dataset.who;
+    const prefix=who?who+': ':'';
+    const val=ta.value;
+    const pos=ta.selectionStart;
+    // Bornes de la ligne courante
+    const lineStart=val.lastIndexOf('\n',pos-1)+1;
+    const lineEndRaw=val.indexOf('\n',pos);
+    const lineEnd=lineEndRaw===-1?val.length:lineEndRaw;
+    const curLine=val.slice(lineStart,lineEnd);
+    // La ligne a-t-elle déjà un préfixe connu ?
+    const quiArr=S?S.quiArr:[];
+    const ci=curLine.indexOf(':');
+    const hasPrefix=ci>0&&(()=>{const p=curLine.slice(0,ci).trim();return p==='T'||p==='B'||quiArr.includes(p);})();
+    let newVal,newCursor;
+    if(hasPrefix||curLine.trim()!==''){
+      // Aller à la ligne suivante avec le nouveau préfixe
+      const ins='\n'+prefix;
+      newVal=val.slice(0,lineEnd)+ins+val.slice(lineEnd);
+      newCursor=lineEnd+ins.length;
+    }else{
+      // Ligne vide : poser le préfixe directement
+      newVal=val.slice(0,lineStart)+prefix+val.slice(lineEnd);
+      newCursor=lineStart+prefix.length;
+    }
+    ta.value=newVal;
+    ta.focus();
+    ta.selectionStart=ta.selectionEnd=newCursor;
+    const preview=ta.closest('.script-panel')?.querySelector('.script-preview');
+    if(preview) preview.innerHTML=renderScript(newVal);
+    update({['blocs/'+id+'/script']:newVal});
+  }
   else if(act==='toggleChat'){
     chatOpen=!chatOpen;
     renderChat();
@@ -953,6 +1065,7 @@ function removeDropLine(){ document.getElementById('drop-line')?.remove(); }
 
 document.addEventListener('dragstart',e=>{
   const c=e.target.closest('.card'); if(!c) return;
+  if(e.target.closest('textarea,input,select')) return;
   dragId=c.dataset.id; c.classList.add('drag');
   e.dataTransfer.effectAllowed='move';
   e.dataTransfer.setData('text/plain',dragId);
