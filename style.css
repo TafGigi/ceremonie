@@ -569,6 +569,9 @@ button:disabled { opacity: .3; pointer-events: none; }
   gap: 10px;
   transition: box-shadow .15s;
   cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .card:last-child { margin-bottom: 0; }
 .card:hover:not(.drag) { box-shadow: var(--sh); }
