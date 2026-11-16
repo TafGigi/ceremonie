@@ -1454,6 +1454,8 @@ document.addEventListener('touchmove',e=>{
   touchClone.style.top=(t.clientY-touchOffsetY)+'px';
   const zone=90, newDir=t.clientY<zone?-1:t.clientY>window.innerHeight-zone?1:0;
   if(newDir!==dragScrollDir){dragScrollDir=newDir;if(newDir&&!dragScrollRaf)dragScrollRaf=requestAnimationFrame(doDragScroll);}
+  const colsWrap=document.querySelector('.columns');
+  if(colsWrap){const hzone=70,hDir=t.clientX<hzone?-1:t.clientX>window.innerWidth-hzone?1:0;if(hDir)colsWrap.scrollLeft+=hDir*12;}
   touchClone.style.pointerEvents='none';
   const under=document.elementFromPoint(t.clientX,t.clientY);
   document.querySelectorAll('.col').forEach(c=>c.classList.remove('drag-over'));
